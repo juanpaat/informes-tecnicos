@@ -1,0 +1,342 @@
+"""
+Configuración para generación de informes
+Contiene configuración de archivos, parseo de datos y cálculos de riesgo
+"""
+
+import os
+from typing import Dict, Any
+from utils import parse_spreadsheet_line, validate_file_path, map_rating_to_score, calculate_risk_score, sentence_case_after_period, remove_double_spaces
+
+# Definir pesos para cada métrica
+PESOS_RIESGO_EXTERNO = {
+    'genera_vecindario': 0.05,
+    'limpieza_vecindario': 0.13,
+    'manejo_basuras_vecindario': 0.13,
+    'infraes_vecindario': 0.10,
+    'ilumina_vecindario': 0.05,
+    'animal_cercanias': 0.10,
+    'construccion_cerca': 0.05,
+    'zonas_verdes_cerca': 0.10,
+    'cuerpos_de_agua_cerca': 0.10,
+    'desagues_cerca': 0.05,
+    'locales_comida': 0.14
+}
+
+PESOS_RIESGO_INTERNO = {
+    'general_establecimiento': 0.05 ,
+    'limpieza_establecimiento': 0.17 , 
+    'almacenamiento_establecimiento': 0.07,
+    'iluminacion_establecimiento': 0.05,
+    'capacitacion_personal': 0.05,
+    'sellamiento_puertas': 0.1,
+    'ventilacion_establecimiento': 0.08,
+    'grietas_instalaciones': 0.07,
+    'entrada_salida_material': 0.1,
+    'acumulacion_objetos': 0.08,
+    'areas_manipulacion_comida': 0.11,
+    'presencia_animales': 0.07
+}
+
+class ReportConfig:
+    """Clase de configuración para generación de informes"""
+    
+    # ============================================================================
+    # PASO 1: PEGAR LÍNEA DE HOJA DE CÁLCULO AQUÍ (separada por tabulaciones o comas)
+    # ============================================================================
+    SPREADSHEET_LINE = "11/10/2025 19:28:13	3692	U.R. CAMINO VERDE DEL BOSQUE	No aplica	Cl.  39SUR   #   27 - 55	ENVIGADO	302 36 15 -          320 632 29 27	Residencial	Esporádico	11/10/2025	15:30:00	15:30:00	16:10:00	Yakelin Espinoza 	Propietario 	Adolfo Guerrero, Jose Garizado	Jose Garizado	(Control general) Rastreros, voladores y roedores plaga menor	Aspersión, Inyección	Apartamentos	🟢 Sin evidencia	🟢 Sin evidencia	🟢 Sin evidencia	🟢 Sin evidencia	🟢 Sin evidencia	🟢 Sin evidencia	🟢 Sin evidencia	🟢 Sin evidencia	🟢 Sin evidencia	Black Jack gel, I con 10 me 	En el momento de realizar el control integrado de plagas no se manifestó ninguna clase de vectores ni roedores plaga menor esto debido a la efectividad de controles anteriores a la buena conservación de plaguicidas aplicadas y a las buenas condiciones higiénicas por otro lado se pudo observar fisuras que son factor claves para el albergue de plagas además de que el ingreso de plagas puede ser a través del transporte indirecto de productos o enseres	Conservar plaguicidas aplicados. No mojar y no retirar, Mejorar condiciones higiénicas y locativas, Realizar controles periódicos	Sellar fisuras y hendiduras	Mantener una limpieza profunda y constante	Tener almacenamiento adecuado de alimentos	6 meses	🟡 Buena	🟡 Buena	🟡 Buena	🟡 Buena	🟡 Buena	🟡 Pocas	🟡 Pocas	🟡 Pocas	🟡 Pocas	🟡 Pocas	🟡 Pocas	🟡 Buena	🟡 Buena	🟡 Buena	🟡 Buena	🟡 Buena	🟡 Buena	🟡 Buena	🟡 Pocas	🟡 Pocas	🟡 Pocas	🟡 Pocas	🟡 Pocas	10/10/2025 vivienda ubicada en U.R. Camino verde del bosque que requiere control general apto 802 (incluye el cuarto útil); Favor hacer adecuada inspección buscando sitios de proliferación y alojamiento, hacer una adecuada aplicación del producto de acuerdo al grado de infestación y los sitios donde se va a aplicar, asesorar constantemente en campo teniendo en cuenta aquellos aspectos a mejorar en el lugar y realizar un adecuado informe técnico con las recomendaciones halladas. Se coordinó con la sra.  Jackeline Espinosa / residente / 320 632 29 27"
+    #SPREADSHEET_LINE = "14/07/2025 19:19:56	5202	OBRA HOTELERA MEDELLIN	No aplica	Cl.   9ASUR   #   43A - 45	MEDELLIN	321 795 15 04	Servicios	Esporádico	14/07/2025	4:00:00	4:40:00	5:40:00	Andrey orozco 	Vijilante 	Brayan Fontalvo	Brayan Fontalvo	Visita de Monitoreo	Nebulización, Cebado	Áreas abiertas	🟢 Sin evidencia	🟢 Sin evidencia	🟢 Sin evidencia	🟢 Sin evidencia	🟠 Considerable evidencia	🟢 Sin evidencia	🟠 Considerable evidencia	🟢 Sin evidencia	🟢 Sin evidencia	Rutto, Skeeter 1% SG, Ratimor	Realizada la visita de monitoreo se hizo utilizando el mecanismos de Nebulización en area en general, una aplicación de cebos rodenticida en área perimetral, y una aplicación de larvicidas en empozamiento de agua. Ya que manifiestan roedores y zancudos. La zona externa cuenta con quebrada y es factor de riesgo para el ingreso de roedores, también en área interna se observa empozamiento de aguas debido a su actividad principal en obra, es importante hacer controles periódicos para poder así tener un ambiente tolerable y libre de plaga de importancia en salud pública 	Conservar plaguicidas aplicados. No mojar y no retirar, Mantener las buenas condiciones higiénicas y locativas, Mejorar condiciones higiénicas y locativas, Evitar saturación de objetos, Analizar si se requiere Eliminar objetos en desuso, Realizar controles periódicos	Hacer controles periódicos 	Conservar plaguicidas aplicados 	Evitar saturaron de objetos 	1 mes	🟡 Buena	🟡 Buena	🟡 Buena	🟡 Buena	🟡 Buena	🟡 Pocas	🟢 Nada	🟡 Pocas	🟡 Pocas	🟡 Pocas	🟢 Nada	🟠 Regular	🟠 Regular	🟠 Regular	🟡 Buena	🟡 Buena	🟠 Regular	🟡 Buena	🟢 Nada	🟠 Bastantes	🟠 Bastantes	🟡 Pocas	🟢 Nada	11/07/2025: CLIENTE ESPORADICO QUE SE LE RAELIZO CONTROL GENERAL CON ENFASIS EN ROEDORES PLAGA MENOR EN SECTOR CERCANO A QUEBRADA Y MOSQUITOS POR EMPOZAMIENTOS DE AGUA, REVISAR Y REFORZAR LA PASADA APLICACION Y BRINDAR COMPLETA ASESORIA SOBRE ADECUADO MANEJO DE RESIDUOS ORGANICOS"
+    # Alternativa para CSV: "Juan Pérez,Ingeniería,85000,2024,Bogotá,5,Excelente,95"
+    
+    # Establecer delimitador basado en formato de hoja de cálculo
+    DELIMITER = '\t'  # Usar '\t' para Excel/Google Sheets, ',' para CSV
+    
+    # ============================================================================
+    # PASO 2: ANALIZAR LA LÍNEA EN VARIABLES
+    # ============================================================================
+    def __init__(self):
+        """Inicializar configuración analizando la línea de hoja de cálculo"""
+        # Analizar la línea de hoja de cálculo
+        values = parse_spreadsheet_line(self.SPREADSHEET_LINE, self.DELIMITER)
+        
+        # Asignar cada valor a una variable nombrada
+        # PERSONALIZAR ESTOS BASÁNDOSE EN COLUMNAS DE HOJA DE CÁLCULO
+        try:
+            self.marca_temporal = values[0]
+            self.identificador = values[1]
+            self.cliente = values[2].title()
+            self.sede = values[3].title()
+            self.direccion = remove_double_spaces(values[4])
+            self.municipio = values[5].title()
+            self.telefono = values[6]
+            self.sector = values[7].title()
+            self.fidelidad = values[8]
+            self.fecha = values[9]
+            self.hora_programada = values[10]
+            self.hora_ingreso = values[11]
+            self.hora_salida = values[12]
+            self.acompanante = values[13].title()
+            self.cargo = values[14].title()
+            self.tecnicos = values[15]
+            self.tec_encargado = values[16]
+            self.tipo_control = values[17]
+            self.metodo_control = values[18]
+            self.areas = values[19]
+            self.cucarachas = values[20]
+            self.hormigas = values[21]
+            self.moscas = values[22]
+            self.mosquitos = values[23]
+            self.zancudo = values[24]
+            self.raton_casero = values[25]
+            self.rata_noruega = values[26]
+            self.raton_tejado = values[27]
+            self.larvas_mosquitos = values[28]
+            self.plaguicidas = values[29]
+            self.observaciones = values[30]
+            self.reco_generales = values[31]
+            self.reco_especificas_1 = values[32]
+            self.reco_especificas_2 = values[33]
+            self.reco_especificas_3 = values[34]
+            self.periodicidad = values[35]
+            self.genera_vecindario = map_rating_to_score(values[36])
+            self.limpieza_vecindario = map_rating_to_score(values[37])
+            self.manejo_basuras_vecindario = map_rating_to_score(values[38])
+            self.infraes_vecindario = map_rating_to_score(values[39])
+            self.ilumina_vecindario = map_rating_to_score(values[40])
+            self.animal_cercanias = map_rating_to_score(values[41])
+            self.construccion_cerca = map_rating_to_score(values[42])
+            self.zonas_verdes_cerca = map_rating_to_score(values[43])
+            self.cuerpos_de_agua_cerca = map_rating_to_score(values[44])
+            self.desagues_cerca = map_rating_to_score(values[45])
+            self.locales_comida = map_rating_to_score(values[46])
+            self.general_establecimiento = map_rating_to_score(values[47])
+            self.limpieza_establecimiento = map_rating_to_score(values[48])
+            self.almacenamiento_establecimiento = map_rating_to_score(values[49])
+            self.iluminacion_establecimiento = map_rating_to_score(values[50])
+            self.capacitacion_personal = map_rating_to_score(values[51])
+            self.sellamiento_puertas = map_rating_to_score(values[52])
+            self.ventilacion_establecimiento = map_rating_to_score(values[53])
+            self.grietas_instalaciones = map_rating_to_score(values[54])
+            self.entrada_salida_material = map_rating_to_score(values[55])
+            self.acumulacion_objetos = map_rating_to_score(values[56])
+            self.areas_manipulacion_comida = map_rating_to_score(values[57])
+            self.presencia_animales = map_rating_to_score(values[58])
+            self.antecedentes = sentence_case_after_period(values[59])
+        
+            # Calcular riesgos externos 
+            self.risk_genera_vecindario = calculate_risk_score(values[36], PESOS_RIESGO_EXTERNO['genera_vecindario'])
+            self.risk_limpieza_vecindario = calculate_risk_score(values[37], PESOS_RIESGO_EXTERNO['limpieza_vecindario'])
+            self.risk_manejo_basuras_vecindario = calculate_risk_score(values[38], PESOS_RIESGO_EXTERNO['manejo_basuras_vecindario'])
+            self.risk_infraes_vecindario = calculate_risk_score(values[39], PESOS_RIESGO_EXTERNO['infraes_vecindario'])
+            self.risk_ilumina_vecindario = calculate_risk_score(values[40], PESOS_RIESGO_EXTERNO['ilumina_vecindario'])
+            self.risk_animal_cercanias = calculate_risk_score(values[41], PESOS_RIESGO_EXTERNO['animal_cercanias'])
+            self.risk_construccion_cerca = calculate_risk_score(values[42], PESOS_RIESGO_EXTERNO['construccion_cerca'])
+            self.risk_zonas_verdes_cerca = calculate_risk_score(values[43], PESOS_RIESGO_EXTERNO['zonas_verdes_cerca'])
+            self.risk_cuerpos_de_agua_cerca = calculate_risk_score(values[44], PESOS_RIESGO_EXTERNO['cuerpos_de_agua_cerca'])
+            self.risk_desagues_cerca = calculate_risk_score(values[45], PESOS_RIESGO_EXTERNO['desagues_cerca'])
+            self.risk_locales_comida = calculate_risk_score(values[46], PESOS_RIESGO_EXTERNO['locales_comida'])
+
+            # Calcular riesgos internos
+            self.risk_general_establecimiento = calculate_risk_score(values[47], PESOS_RIESGO_INTERNO['general_establecimiento'])
+            self.risk_limpieza_establecimiento = calculate_risk_score(values[48], PESOS_RIESGO_INTERNO['limpieza_establecimiento'])
+            self.risk_almacenamiento_establecimiento = calculate_risk_score(values[49], PESOS_RIESGO_INTERNO['almacenamiento_establecimiento'])
+            self.risk_iluminacion_establecimiento = calculate_risk_score(values[50], PESOS_RIESGO_INTERNO['iluminacion_establecimiento'])
+            self.risk_capacitacion_personal = calculate_risk_score(values[51], PESOS_RIESGO_INTERNO['capacitacion_personal'])
+            self.risk_sellamiento_puertas = calculate_risk_score(values[52], PESOS_RIESGO_INTERNO['sellamiento_puertas'])
+            self.risk_ventilacion_establecimiento = calculate_risk_score(values[53], PESOS_RIESGO_INTERNO['ventilacion_establecimiento'])
+            self.risk_grietas_instalaciones = calculate_risk_score(values[54], PESOS_RIESGO_INTERNO['grietas_instalaciones'])
+            self.risk_entrada_salida_material = calculate_risk_score(values[55], PESOS_RIESGO_INTERNO['entrada_salida_material'])
+            self.risk_acumulacion_objetos = calculate_risk_score(values[56], PESOS_RIESGO_INTERNO['acumulacion_objetos'])
+            self.risk_areas_manipulacion_comida = calculate_risk_score(values[57], PESOS_RIESGO_INTERNO['areas_manipulacion_comida'])
+            self.risk_presencia_animales = calculate_risk_score(values[58], PESOS_RIESGO_INTERNO['presencia_animales'])
+
+
+            # calcular riesgo total externo
+            self.riesgo_total_externo = (
+                self.risk_genera_vecindario +
+                self.risk_limpieza_vecindario +
+                self.risk_manejo_basuras_vecindario +
+                self.risk_infraes_vecindario +
+                self.risk_ilumina_vecindario +
+                self.risk_animal_cercanias +
+                self.risk_construccion_cerca +
+                self.risk_zonas_verdes_cerca +
+                self.risk_cuerpos_de_agua_cerca +
+                self.risk_desagues_cerca +
+                self.risk_locales_comida
+            )
+            # Calcular riesgo total interno
+            self.riesgo_total_interno =(
+                self.risk_general_establecimiento +
+                self.risk_limpieza_establecimiento +
+                self.risk_almacenamiento_establecimiento +
+                self.risk_iluminacion_establecimiento +
+                self.risk_capacitacion_personal +
+                self.risk_sellamiento_puertas +
+                self.risk_ventilacion_establecimiento +
+                self.risk_grietas_instalaciones +
+                self.risk_entrada_salida_material +
+                self.risk_acumulacion_objetos +
+                self.risk_areas_manipulacion_comida +
+                self.risk_presencia_animales
+            )
+            
+        
+        except IndexError:
+            raise ValueError(
+                f"Expected 60 values in spreadsheet line, got {len(values)}. "
+                f"Please check your SPREADSHEET_LINE in config.py"
+            )
+        
+        # ========================================================================
+        # PASO 3: RUTAS DE ARCHIVOS
+        # ========================================================================
+        self.TEMPLATE_PATH = "INFORME TÉCNICO FINAL.docx" 
+        
+        # Clean filename by replacing invalid characters
+        clean_cliente = self.cliente.replace("/", "-").replace("\\", "-").replace(":", "-").replace("*", "").replace("?", "").replace('"', "").replace("<", "").replace(">", "").replace("|", "")
+        clean_fecha = self.fecha.replace("/", "-").replace("\\", "-")
+        self.OUTPUT_PATH = f"Informe_{clean_cliente}_{clean_fecha}.docx"
+        
+        # ========================================================================
+        # PASO 4: CONFIGURACIÓN DE VISUALIZACIONES
+        # ========================================================================
+        self.ENABLE_VISUALIZATIONS = True
+        
+        # Configuración de Visualización 1 - Gráfico de Presencia de Plagas
+        self.VIZ_1_ENABLED = True
+        self.VIZ_1_PLACEHOLDER = '{{img_1}}'
+        
+        # Configuración de Visualización 2 - Matriz de Riesgo
+        self.VIZ_2_ENABLED = True
+        self.VIZ_2_PLACEHOLDER = '{{img_2}}'
+        
+        # Configuración de Visualización 3 - Gráfico de Dona de Riesgos Externos
+        self.VIZ_3_ENABLED = True
+        self.VIZ_3_PLACEHOLDER = '{{riesgos_externos_plot}}'
+        
+        # Configuración de Visualización 4 - Gráfico de Dona de Riesgos Internos
+        self.VIZ_4_ENABLED = True
+        self.VIZ_4_PLACEHOLDER = '{{riesgos_internos_plot}}'
+    
+    # ============================================================================
+    # MÉTODOS DE AYUDA
+    # ============================================================================
+    
+    def get_data_dict(self) -> Dict[str, Any]:
+        """
+        Retornar todos los datos como diccionario para reemplazo de marcadores
+        Las claves deben coincidir con nombres de {{marcador}} en la plantilla
+        """
+        return {
+            'marca_temporal' : self.marca_temporal,
+            'identificador' : self.identificador,
+            'cliente' : self.cliente, 
+            'sede' : self.sede, 
+            'direccion' : self.direccion, 
+            'municipio' : self.municipio, 
+            'telefono' : self.telefono, 
+            'sector' : self.sector, 
+            'fidelidad' : self.fidelidad, 
+            'fecha' : self.fecha, 
+            'hora' : self.hora_programada, 
+            'h_inicio' : self.hora_ingreso, 
+            'h_salida' : self.hora_salida, 
+            'acompanante' : self.acompanante, 
+            'cargo' : self.cargo, 
+            'tecnicos' : self.tecnicos, 
+            'tecnico_encargado' : self.tec_encargado, 
+            'tipo_de_control' : self.tipo_control, 
+            'metodo_control' : self.metodo_control, 
+            'areas_controladas' : self.areas, 
+            'cucarachas' : self.cucarachas,
+            'hormigas' : self.hormigas,
+            'moscas' : self.moscas,
+            'mosquitos' : self.mosquitos,
+            'zancudo' : self.zancudo,
+            'raton_casero' : self.raton_casero,
+            'rata_noruega' : self.rata_noruega,
+            'raton_tejado' : self.raton_tejado,
+            'larvas_mosquitos' : self.larvas_mosquitos,
+            'obs_generales' : self.observaciones, 
+            'reco_general' : self.reco_generales, 
+            'reco_especificas_1' : self.reco_especificas_1, 
+            'reco_especificas_2' : self.reco_especificas_2, 
+            'reco_especificas_3' : self.reco_especificas_3, 
+            'plaguicidas': self.plaguicidas,
+            'antecedentes' : self.antecedentes,
+            'periodicidad' : self.periodicidad,
+            'tecnico encargado' : self.tec_encargado, 
+        }
+    
+    def get_pest_presence_data(self) -> list:
+        """
+        Retornar datos de presencia de plagas para visualización 1
+        """
+        return [
+            map_rating_to_score(self.cucarachas),
+            map_rating_to_score(self.hormigas),
+            map_rating_to_score(self.moscas),
+            map_rating_to_score(self.mosquitos),
+            map_rating_to_score(self.zancudo),
+            map_rating_to_score(self.raton_casero),
+            map_rating_to_score(self.rata_noruega),
+            map_rating_to_score(self.raton_tejado),
+            map_rating_to_score(self.larvas_mosquitos)
+        ]
+    
+    def get_risk_scores(self) -> tuple:
+        """
+        Retornar puntajes de riesgo para visualización de matriz de riesgo
+        """
+        return (self.riesgo_total_interno, self.riesgo_total_externo)
+    
+    def get_external_risk_data(self) -> tuple:
+        """
+        Retornar datos de riesgos externos para visualización de gráfico de dona
+        """
+        return (
+            self.risk_genera_vecindario,
+            self.risk_limpieza_vecindario, 
+            self.risk_manejo_basuras_vecindario,
+            self.risk_infraes_vecindario,
+            self.risk_ilumina_vecindario,
+            self.risk_animal_cercanias,
+            self.risk_construccion_cerca,
+            self.risk_zonas_verdes_cerca,
+            self.risk_cuerpos_de_agua_cerca,
+            self.risk_desagues_cerca,
+            self.risk_locales_comida
+        )
+    
+    def get_internal_risk_data(self) -> tuple:
+        """
+        Retornar datos de riesgos internos para visualización de gráfico de dona
+        """
+        return (
+            self.risk_general_establecimiento,
+            self.risk_limpieza_establecimiento,
+            self.risk_almacenamiento_establecimiento,
+            self.risk_iluminacion_establecimiento,
+            self.risk_capacitacion_personal,
+            self.risk_sellamiento_puertas,
+            self.risk_ventilacion_establecimiento,
+            self.risk_grietas_instalaciones,
+            self.risk_entrada_salida_material,
+            self.risk_acumulacion_objetos,
+            self.risk_areas_manipulacion_comida,
+            self.risk_presencia_animales
+        )
+    
+    def validate(self) -> bool:
+        """Validar la configuración"""
+        # Verificar si la plantilla existe
+        if not validate_file_path(self.TEMPLATE_PATH, must_exist=True):
+            print(f"✗ Error: Archivo de plantilla no encontrado: {self.TEMPLATE_PATH}")
+            return False
+        
+        # Verificar si la ruta de salida es escribible
+        if not validate_file_path(self.OUTPUT_PATH, must_exist=False):
+            print(f"✗ Error: No se puede escribir en ruta de salida: {self.OUTPUT_PATH}")
+            return False
+        
+        return True
