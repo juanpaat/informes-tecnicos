@@ -1,15 +1,8 @@
-# 📊 Sistema de Generación de Informes Técnicos
+# Sistema de Generación de Informes Técnicos
 
-## 🎯 ¿Qué hace este sistema?
+## ¿Qué hace este sistema?
 
 Este sistema automatiza la creación de informes técnicos para servicios de control de plagas. Toma datos de una hoja de cálculo (Excel/Google Sheets) y los convierte en un documento de Word profesional con gráficos incluidos.
-
-### Características principales:
-- ✅ Reemplaza automáticamente todos los datos del servicio en la plantilla
-- ✅ Genera 4 gráficos profesionales (presencia de plagas, matriz de riesgo, y gráficos de dona)
-- ✅ Calcula automáticamente los puntajes de riesgo interno y externo
-- ✅ Limpia y formatea el texto automáticamente
-- ✅ Crea archivos con nombres únicos por cliente y fecha
 
 ## 🚀 Cómo usar el sistema
 
