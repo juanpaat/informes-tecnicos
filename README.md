@@ -4,9 +4,16 @@
 
 Este sistema automatiza la creación de informes técnicos para servicios de control de plagas. Toma datos de una hoja de cálculo (Excel/Google Sheets) y los convierte en un documento de Word profesional con gráficos incluidos.
 
-## 🚀 Cómo usar el sistema
+## 🌐 **Aplicación Web - Listo para la Nube**
 
-### 🌐 **NUEVO: Interfaz Web (Recomendado)**
+### **Uso en Línea (Streamlit Cloud)**
+La aplicación está desplegada y lista para usar en la nube:
+- **Acceso directo desde cualquier navegador**
+- **Sin instalación requerida**
+- **Interfaz intuitiva y profesional**
+- **Descarga directa de informes**
+
+### **Uso Local**
 ```bash
 # 1. Instalar dependencias
 pip install -r requirements.txt
@@ -52,182 +59,241 @@ python main.py
 
 ---
 
-### 🆚 **¿Cuál método usar?**
+## ✨ **Características Principales**
 
-| Característica | Interfaz Web | Línea de Comandos |
-|---|---|---|
-| **Facilidad** | ⭐⭐⭐⭐⭐ Muy fácil | ⭐⭐⭐ Requiere editar código |
-| **Velocidad** | ⭐⭐⭐⭐⭐ Muy rápido | ⭐⭐⭐⭐ Rápido |
-| **Edición** | ✅ Campos editables | ❌ Solo en código |
-| **Vista previa** | ✅ Ve todos los datos | ❌ No disponible |
-| **Usuarios** | 👥 Cualquier usuario | 👨‍💻 Usuarios técnicos |
+### **🔄 Proceso Automático Completo**
+1. **Pegar datos** de Excel/Google Sheets directamente
+2. **Editar campos** en tiempo real con interfaz visual
+3. **Generar gráficos** automáticamente (4 tipos de visualizaciones)
+4. **Descargar informe** en formato Word profesional
 
-**💡 Recomendación:** Usa la **Interfaz Web** (`streamlit run app.py`) para mayor facilidad y funcionalidad.
+### **📊 Visualizaciones Automáticas**
+- **Gráfico de barras**: Presencia de plagas por tipo
+- **Matriz de riesgo**: Evaluación visual de riesgos internos vs externos  
+- **Gráfico de dona**: Distribución de riesgos externos
+- **Gráfico de dona**: Distribución de riesgos internos
 
-## 📁 Estructura del proyecto
+### **🌟 Ventajas de la Interfaz Web**
+
+| Característica | Descripción |
+|---|---|
+| **📱 Accesible** | Funciona en cualquier navegador, celular o computadora |
+| **� Sin instalación** | No requiere software adicional |
+| **✏️ Edición visual** | Modifica cualquier campo antes de generar |
+| **📊 Vista previa** | Ve todos los datos organizados por categorías |
+| **⚡ Rápido** | Genera informes en segundos |
+| **☁️ En la nube** | Acceso desde cualquier lugar |
+
+## 🎯 **Cómo Usar el Sistema**
+
+### **Paso 1: Acceder a la Aplicación**
+- **En línea**: Accede directamente desde el navegador (enlace proporcionado)
+- **Local**: Ejecuta `streamlit run app.py` en tu computadora
+
+### **Paso 2: Cargar Datos**
+1. **Copia** una fila completa de tu hoja de cálculo (Excel/Google Sheets)
+2. **Pega** los datos en el área de texto de la aplicación
+3. **Haz clic** en "� Cargar Datos"
+
+### **Paso 3: Revisar y Editar**
+- La aplicación muestra automáticamente todos los campos organizados
+- **Edita** cualquier campo que necesites modificar
+- **Revisa** la información de plagas y riesgos
+
+### **Paso 4: Generar Informe**
+1. **Haz clic** en "📄 Generar Informe Técnico"
+2. **Espera** mientras se crean los gráficos (segundos)
+3. **Descarga** automáticamente el archivo Word
+
+## �📁 Estructura del proyecto
 
 ```
 informes-tecnicos/
-├── app.py                           # Aplicación web Streamlit (RECOMENDADO)
-├── main.py                          # Archivo línea de comandos (tradicional)
-├── config.py                        # Configuración y procesamiento de datos
-├── utils.py                         # Funciones internas del sistema
-├── requirements.txt                 # Lista de programas necesarios
-├── INFORME TÉCNICO FINAL.docx       # Plantilla (DEBE existir)
-├── README.md                        # Esta guía
-└── README_WEB.md                    # Guía específica de la app web
+├── app.py                           # 🌐 Aplicación web Streamlit (PRINCIPAL)
+├── main.py                          # 💻 Versión línea de comandos (alternativa)
+├── config.py                        # ⚙️ Configuración y cálculos automáticos
+├── utils.py                         # 🔧 Funciones de generación y gráficos
+├── requirements.txt                 # 📦 Dependencias de Python
+├── INFORME TÉCNICO FINAL.docx       # 📋 Plantilla Word (REQUERIDA)
+├── logo2021.png                     # 🎨 Logo de la empresa
+└── README.md                        # 📖 Esta guía
 ```
 
-## 🔧 Archivos explicados en detalle
+## 🧠 **Inteligencia del Sistema**
 
-### **config.py** - El cerebro del sistema
-**¿Qué hace?**
-- Toma la línea de hoja de cálculo que pegaste
-- La divide en 60 campos individuales (cliente, dirección, fecha, etc.)
-- Calcula automáticamente los puntajes de riesgo
-- Convierte las calificaciones con emojis (🔴 Mala, 🟢 Excelente) a números
+### **Procesamiento Automático de Datos**
+El sistema reconoce y procesa automáticamente **60 campos** de información:
 
-**Datos que procesa:**
-- Información básica: cliente, dirección, técnico, fecha, hora
-- Presencia de plagas: cucarachas, hormigas, moscas, ratones, etc.
-- Evaluación de riesgos externos: limpieza del vecindario, cercanía a basuras, etc.
-- Evaluación de riesgos internos: limpieza del establecimiento, capacitación, etc.
-- Observaciones y recomendaciones del técnico
+**📋 Información Básica**
+- Cliente, dirección, municipio, teléfono
+- Fecha, horas de servicio, técnicos
+- Tipo de control, métodos aplicados
 
-### **main.py** - El coordinador
-**¿Qué hace?**
-1. Carga la configuración desde `config.py`
-2. Abre la plantilla de Word
-3. Genera los 4 gráficos automáticamente
-4. Reemplaza todos los {{marcadores}} con datos reales
-5. Guarda el informe final
+**� Evaluación de Plagas**
+- 9 tipos de plagas evaluadas
+- Niveles de infestación automáticos
+- Conversión de emojis a puntajes numéricos
 
-**Proceso paso a paso:**
-1. **Validación**: Verifica que existe la plantilla
-2. **Generación de gráficos**: Crea las 4 visualizaciones
-3. **Inserción de imágenes**: Coloca los gráficos en el documento
-4. **Reemplazo de texto**: Sustituye todos los {{marcadores}}
-5. **Guardado**: Crea el archivo final
+**⚠️ Análisis de Riesgos**
+- **11 factores externos**: Vecindario, basuras, construcciones, etc.
+- **12 factores internos**: Limpieza, capacitación, sellamiento, etc.
+- **Cálculo automático** con pesos configurables
+- **Matriz visual** de riesgos combinados
 
-### **utils.py** - Las herramientas
-**¿Qué contiene?**
-- **ReportGenerator**: Clase principal que maneja el documento de Word
-- **Funciones de gráficos**: Crean las visualizaciones profesionales
-- **Herramientas de texto**: Limpian y formatean el texto automáticamente
-- **Cálculos de riesgo**: Convierten calificaciones a puntajes numéricos
+### **Generación Inteligente de Gráficos**
+1. **Detecta automáticamente** los niveles de riesgo
+2. **Calcula distribuciones** proporcionales
+3. **Genera colores** apropiados según el riesgo
+4. **Crea leyendas** descriptivas
+5. **Optimiza tamaños** para el documento final
 
-## 📊 Gráficos que genera automáticamente
+### **Motor de Plantillas**
+- **Busca automáticamente** todos los marcadores `{{campo}}`
+- **Reemplaza texto** en párrafos y tablas
+- **Inserta imágenes** en posiciones exactas
+- **Mantiene formato** original del documento
+- **Limpia archivos temporales** automáticamente
 
-### 1. **{{img_1}}** - Gráfico de Presencia de Plagas
-- **Tipo**: Gráfico de barras
-- **Tamaño**: 7.2cm × 4.55cm
-- **Muestra**: Nivel de infestación de 9 tipos de plagas
-- **Escala**: 0-4 (0=Sin evidencia, 4=Mucha evidencia)
+## 📊 **Gráficos que Genera Automáticamente**
 
-### 2. **{{img_2}}** - Matriz de Evaluación de Riesgos
-- **Tipo**: Matriz 3×3 con colores
-- **Tamaño**: 7.2cm × 4.55cm
-- **Muestra**: Posición del riesgo total (interno vs externo)
-- **Colores**: Rojo=Alto riesgo, Naranja=Medio, Verde=Bajo
+El sistema crea **4 visualizaciones profesionales** que se insertan automáticamente en el informe:
 
-### 3. **{{riesgos_externos_plot}}** - Gráfico de Dona de Riesgos Externos
-- **Tipo**: Gráfico de dona con líneas de conexión
-- **Tamaño**: 12cm × 7.60cm
-- **Muestra**: Distribución de 11 factores de riesgo externos
-- **Incluye**: Limpieza del vecindario, manejo de basuras, cercanía a restaurantes, etc.
+### **1. 📊 Gráfico de Presencia de Plagas**
+- **Qué muestra**: Nivel de infestación de 9 tipos de plagas
+- **Formato**: Gráfico de barras con escala visual
+- **Escala**: 0 (Sin evidencia) → 4 (Mucha evidencia)
+- **Plagas incluidas**: Cucarachas, hormigas, moscas, mosquitos, zancudos, ratones, ratas, larvas
 
-### 4. **{{riesgos_internos_plot}}** - Gráfico de Dona de Riesgos Internos
-- **Tipo**: Gráfico de dona con líneas de conexión
-- **Tamaño**: 12cm × 7.60cm
-- **Muestra**: Distribución de 12 factores de riesgo internos
-- **Incluye**: Limpieza del establecimiento, capacitación, sellamiento, etc.
+### **2. 🎯 Matriz de Evaluación de Riesgos**
+- **Qué muestra**: Posición exacta del riesgo total combinado
+- **Formato**: Matriz 3×3 con código de colores
+- **Ejes**: Riesgo Interno (X) vs Riesgo Externo (Y)
+- **Colores**: 🔴 Alto → 🟠 Medio → 🟢 Bajo
+- **Zonas numeradas**: I-IX para fácil referencia
 
-## � Cómo funciona el reemplazo de marcadores
+### **3. 🌍 Gráfico de Dona - Riesgos Externos**
+- **Qué muestra**: Distribución proporcional de 11 factores externos
+- **Incluye**: Limpieza vecindario, manejo basuras, construcciones cercanas, locales de comida
+- **Formato**: Gráfico de dona con porcentajes automáticos
+- **Inteligente**: Solo muestra factores con riesgo > 0
 
-### Formato correcto de marcadores:
+### **4. 🏢 Gráfico de Dona - Riesgos Internos**
+- **Qué muestra**: Distribución proporcional de 12 factores internos
+- **Incluye**: Limpieza establecimiento, capacitación, sellamiento, ventilación, grietas
+- **Formato**: Gráfico de dona con porcentajes automáticos
+- **Inteligente**: Solo muestra factores con riesgo > 0
+
+## 🔄 **Sistema de Marcadores Inteligente**
+
+### **Funcionamiento Automático**
+El sistema busca y reemplaza automáticamente **todos los marcadores** en la plantilla Word:
+
+**Formato de marcadores:**
 ```
 {{ nombre_del_campo }}
 ```
 
-### Ejemplos de marcadores que se reemplazan automáticamente:
+**Ejemplos de reemplazo automático:**
 ```
 {{ cliente }}           → "U.R. CAMINO VERDE DEL BOSQUE"
-{{ direccion }}         → "Cl. 39SUR # 27 - 55"
+{{ direccion }}         → "Cl. 39SUR # 27 - 55"  
 {{ fecha }}             → "11/10/2025"
 {{ tecnico_encargado }} → "Jose Garizado"
 {{ obs_generales }}     → "En el momento de realizar el control..."
-{{ reco_general }}      → "Conservar plaguicidas aplicados..."
+{{ plaguicidas }}       → "Black Jack gel, I con 10 me"
 ```
 
-## 🔍 Solución de problemas comunes
+**Marcadores especiales para gráficos:**
+```
+{{ img_1 }}                    → Gráfico de presencia de plagas
+{{ img_2 }}                    → Matriz de evaluación de riesgos
+{{ riesgos_externos_plot }}    → Gráfico dona riesgos externos
+{{ riesgos_internos_plot }}    → Gráfico dona riesgos internos
+```
 
-### ❌ Error: "Template file not found"
-**Problema**: No encuentra la plantilla
-**Solución**: Asegúrate de que existe el archivo `INFORME TÉCNICO FINAL.docx` en la carpeta
+## ⚠️ **Problemas Comunes y Soluciones**
 
-### ❌ Error: "Expected 60 values, got X values"
-**Problema**: Los datos de la hoja de cálculo no tienen 60 columnas
-**Soluciones**:
-1. Verifica que copiaste la fila completa (todas las columnas)
-2. Revisa el `DELIMITER` en `config.py`:
-   - `'\t'` para Excel/Google Sheets (tabulaciones)
-   - `','` para archivos CSV (comas)
+### **❌ "No se pueden cargar los datos"**
+**Causa**: Datos incompletos o formato incorrecto
+**Solución**: 
+- Asegúrate de copiar **toda la fila** desde Excel/Google Sheets
+- Incluye **todas las columnas** (debe tener 60 campos)
+- Usa **Ctrl+C** para copiar y **Ctrl+V** para pegar
 
-### ❌ Los gráficos no aparecen
-**Problema**: Las imágenes no se insertan
-**Verificaciones**:
-1. Revisa que los marcadores estén escritos correctamente:
-   - `{{img_1}}` (presencia de plagas)
-   - `{{img_2}}` (matriz de riesgo)
-   - `{{riesgos_externos_plot}}` (dona externa)
-   - `{{riesgos_internos_plot}}` (dona interna)
+### **❌ "Template file not found"**  
+**Causa**: Falta el archivo de plantilla
+**Solución**: 
+- Verifica que existe `INFORME TÉCNICO FINAL.docx` 
+- El archivo debe estar en la misma carpeta que `app.py`
+- No cambies el nombre del archivo de plantilla
 
-### ❌ Algunos marcadores no se reemplazan
-**Problema**: Quedan {{marcadores}} sin reemplazar en el documento final
-**Soluciones**:
-1. Verifica que el marcador en la plantilla coincida exactamente con el nombre en `config.py`
-2. Revisa que no haya espacios extra: `{{ cliente }}` (correcto) vs `{{  cliente  }}` (incorrecto)
-3. Considera mayúsculas y minúsculas
+### **❌ "Error al generar gráficos"**
+**Causa**: Problemas con los valores de riesgo
+**Solución**:
+- Revisa que los campos de riesgo tengan valores válidos
+- Formatos correctos: 🟢 Excelente, 🟡 Buena, 🟠 Regular, 🔴 Mala
+- Para cantidades: 🟢 Nada, 🟡 Pocas, 🟠 Bastantes, 🔴 Muchas
 
-## 🛠️ Personalización avanzada
+### **❌ "La descarga no funciona"**
+**Causa**: Bloqueo del navegador o problema temporal
+**Solución**:
+- Actualiza la página y vuelve a generar
+- Verifica que tu navegador permita descargas
+- Intenta con otro navegador si persiste el problema
 
-### Agregar nuevos marcadores:
-1. **En `config.py`**, agrega el nuevo campo en `get_data_dict()`:
+### **❌ "Faltan marcadores en el informe"**
+**Causa**: Marcadores mal escritos en la plantilla
+**Solución**:
+- Verifica el formato exacto: `{{ campo }}` (con espacios)
+- No uses `{{campo}}` (sin espacios)
+- Revisa mayúsculas y minúsculas
+
+## 🛠️ **Personalización y Configuración**
+
+### **⚙️ Ajustar Cálculos de Riesgo**
+Puedes modificar la importancia de cada factor editando los pesos en `config.py`:
+
+**Riesgos Externos** (`PESOS_RIESGO_EXTERNO`):
 ```python
-def get_data_dict(self) -> Dict[str, Any]:
-    return {
-        'mi_nuevo_campo': self.algun_valor,
-        # ... otros campos existentes
-    }
+'limpieza_vecindario': 0.13,      # 13% del riesgo total
+'manejo_basuras_vecindario': 0.13, # 13% del riesgo total  
+'locales_comida': 0.14,           # 14% del riesgo total
+# ... otros factores
 ```
 
-2. **En la plantilla de Word**, agrega: `{{ mi_nuevo_campo }}`
-
-### Cambiar el tamaño de las imágenes:
-1. **Para img_1 e img_2** (presencia y matriz): Modifica en `main.py`:
+**Riesgos Internos** (`PESOS_RIESGO_INTERNO`):
 ```python
-generator.add_image_to_placeholder(
-    placeholder="{{img_1}}",
-    image_path=viz1,
-    width=7.2,    # Cambiar aquí
-    height=4.55   # Y aquí
-)
+'limpieza_establecimiento': 0.17,  # 17% del riesgo total
+'areas_manipulacion_comida': 0.11, # 11% del riesgo total
+'sellamiento_puertas': 0.10,       # 10% del riesgo total
+# ... otros factores
 ```
 
-2. **Para gráficos de dona**: Modifica en `main.py`:
+### **📐 Cambiar Tamaños de Gráficos**
+En `app.py`, líneas de `add_image_to_placeholder()`:
+
+**Gráficos pequeños** (presencia y matriz):
 ```python
-generator.add_image_to_placeholder(
-    placeholder="{{riesgos_externos_plot}}",
-    image_path=viz3,
-    width=12.0,   # Cambiar aquí
-    height=7.60   # Y aquí
-)
+width=7.2, height=4.55  # Cambiar según necesidades
 ```
 
-### Modificar los cálculos de riesgo:
-En `config.py`, ajusta los pesos en las secciones:
-- `PESOS_RIESGO_EXTERNO`: Para factores externos
-- `PESOS_RIESGO_INTERNO`: Para factores internos
+**Gráficos grandes** (donas):
+```python  
+width=12.0, height=7.60  # Cambiar según necesidades
+```
+
+### **🏷️ Agregar Nuevos Marcadores**
+1. **En `config.py`**, agregar en `get_data_dict()`:
+```python
+'mi_nuevo_campo': self.mi_nuevo_valor,
+```
+
+2. **En la plantilla Word**, usar: `{{ mi_nuevo_campo }}`
+
+### **🎨 Personalizar Colores de Gráficos**
+En `utils.py`, modificar las secciones de colores:
+- **Matriz**: Variable `colors` en `create_risk_matrix_plot()`
+- **Donas**: `plt.cm.Reds` y `plt.cm.Blues` en las funciones de dona
 
 ## 📋 Lista completa de marcadores disponibles
 
@@ -259,27 +325,62 @@ En `config.py`, ajusta los pesos en las secciones:
 - `{{ riesgos_externos_plot }}` - Gráfico de dona de riesgos externos
 - `{{ riesgos_internos_plot }}` - Gráfico de dona de riesgos internos
 
-## ✅ Estado actual del sistema
+## 🚀 **Estado del Sistema - Listo para Producción**
 
-**✅ COMPLETAMENTE FUNCIONAL**
-- Procesa automáticamente 60 campos de datos
-- Genera 4 gráficos profesionales de alta calidad
-- Reemplaza todos los marcadores correctamente
-- Calcula riesgos automáticamente con pesos configurables
-- Limpia y formatea texto automáticamente
-- Maneja archivos temporales de manera eficiente
+### **✅ Completamente Funcional**
+- ✅ **Interfaz web profesional** con Streamlit
+- ✅ **Procesamiento automático** de 60 campos de datos  
+- ✅ **4 gráficos profesionales** generados automáticamente
+- ✅ **Cálculo inteligente** de riesgos con pesos configurables
+- ✅ **Reemplazo completo** de marcadores en plantilla Word
+- ✅ **Descarga directa** sin archivos residuales en servidor
+- ✅ **Limpieza automática** de archivos temporales
+- ✅ **Optimizado para la nube** (Streamlit Cloud ready)
 
-**Rendimiento típico:**
-- Tiempo de generación: 1-3 segundos
-- Tamaño del documento final: ~500KB-1MB
-- Calidad de imágenes: 300 DPI (profesional)
+### **⚡ Rendimiento Optimizado**
+| Característica | Especificación |
+|---|---|
+| **Tiempo de generación** | 2-5 segundos completos |
+| **Tamaño del informe** | 500KB - 1MB (con gráficos) |
+| **Calidad de imágenes** | 300 DPI (resolución profesional) |
+| **Campos procesados** | 60 campos automáticamente |
+| **Tipos de gráficos** | 4 visualizaciones diferentes |
+| **Compatibilidad** | Cualquier navegador moderno |
 
-## 📞 Soporte
+### **☁️ Despliegue en la Nube**
+- **Listo para Streamlit Cloud** sin configuración adicional
+- **Sin dependencias complejas** - funciona out-of-the-box
+- **Gestión automática de memoria** y archivos temporales
+- **Escalable** para múltiples usuarios simultáneos
+- **Acceso desde cualquier dispositivo** con internet
 
-Si encuentras problemas:
-1. Verifica que todos los archivos estén en el directorio correcto
-2. Revisa que la plantilla `INFORME TÉCNICO FINAL.docx` existe
-3. Confirma que los datos de la hoja de cálculo están completos (60 columnas)
-4. Ejecuta `python main.py` y revisa los mensajes en la consola
+### **🔒 Seguridad y Privacidad**
+- **Sin almacenamiento permanente** de datos sensibles
+- **Limpieza automática** después de cada uso
+- **Procesamiento local temporal** - datos no persisten
+- **Sin logs** de información confidencial
 
-¡El sistema está diseñado para ser simple y confiable! La mayoría de problemas se resuelven verificando que los archivos estén en su lugar y que los datos estén completos.
+## 📞 **Soporte y Ayuda**
+
+### **🆘 Primer Nivel de Soporte**
+1. **Verifica tu conexión** a internet
+2. **Refresca la página** y vuelve a intentar
+3. **Copia toda la fila** desde Excel/Google Sheets
+4. **Revisa el formato** de los datos pegados
+
+### **🔧 Soporte Técnico**
+Si persisten los problemas:
+- Revisa que todos los **archivos estén presentes** en el repositorio
+- Confirma que la **plantilla Word existe** y es accesible
+- Verifica que los **datos tengan 60 columnas** completas
+- Prueba con **diferentes navegadores** si hay problemas de descarga
+
+### **💬 Contacto**
+Para soporte avanzado o personalizaciones:
+- Reporta problemas específicos con **capturas de pantalla**
+- Incluye **ejemplos de los datos** que causan errores
+- Especifica **navegador y sistema operativo** usado
+
+---
+
+**🎯 El sistema está diseñado para ser intuitivo y confiable. La mayoría de problemas se resuelven verificando que los datos estén completos y el formato sea correcto.**
