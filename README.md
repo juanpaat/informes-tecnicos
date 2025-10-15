@@ -62,10 +62,11 @@ python main.py
 ## ✨ **Características Principales**
 
 ### **🔄 Proceso Automático Completo**
-1. **Pegar datos** de Excel/Google Sheets directamente
-2. **Editar campos** en tiempo real con interfaz visual
-3. **Generar gráficos** automáticamente (4 tipos de visualizaciones)
-4. **Descargar informe** en formato Word profesional
+1. **Pegar datos** de Excel/Google Sheets directamente (60 campos automáticos)
+2. **Editar campos** en tiempo real con interfaz visual organizada por categorías
+3. **Aplicar formato consistente** automáticamente con fuente Roboto Mono
+4. **Generar gráficos** automáticamente (4 tipos de visualizaciones profesionales)
+5. **Descargar informe** en formato Word profesional con un clic
 
 ### **📊 Visualizaciones Automáticas**
 - **Gráfico de barras**: Presencia de plagas por tipo
@@ -78,9 +79,10 @@ python main.py
 | Característica | Descripción |
 |---|---|
 | **📱 Accesible** | Funciona en cualquier navegador, celular o computadora |
-| **� Sin instalación** | No requiere software adicional |
+| **🚀 Sin instalación** | No requiere software adicional |
 | **✏️ Edición visual** | Modifica cualquier campo antes de generar |
 | **📊 Vista previa** | Ve todos los datos organizados por categorías |
+| **🔤 Fuente consistente** | Aplica automáticamente Roboto Mono para uniformidad |
 | **⚡ Rápido** | Genera informes en segundos |
 | **☁️ En la nube** | Acceso desde cualquier lugar |
 
@@ -93,17 +95,24 @@ python main.py
 ### **Paso 2: Cargar Datos**
 1. **Copia** una fila completa de tu hoja de cálculo (Excel/Google Sheets)
 2. **Pega** los datos en el área de texto de la aplicación
-3. **Haz clic** en "� Cargar Datos"
+3. **Haz clic** en "📥 Cargar Datos"
 
 ### **Paso 3: Revisar y Editar**
-- La aplicación muestra automáticamente todos los campos organizados
-- **Edita** cualquier campo que necesites modificar
-- **Revisa** la información de plagas y riesgos
+- La aplicación muestra automáticamente todos los campos organizados por categorías:
+  - 🏢 **Información del Cliente**: Cliente, sede, dirección, municipio, teléfono, sector
+  - 📅 **Información del Servicio**: Fecha, horas, tipo de control, método, áreas
+  - 👥 **Personal**: Técnico encargado, técnicos, acompañante, cargo
+  - 🔬 **Tratamiento y Observaciones**: Plaguicidas, observaciones, recomendaciones
+  - 🐛 **Presencia de Plagas**: 9 tipos con selectores visuales (🟢 Sin evidencia → 🔴 Mucha evidencia)
+  - 🌍 **Riesgos Externos**: 11 factores con opciones cualitativas y cuantitativas
+  - 🏢 **Riesgos Internos**: 12 factores con evaluación detallada
+- **Edita** cualquier campo con interfaz intuitiva (texto, áreas de texto, selectores)
+- **Datos adicionales** disponibles en sección expandible
 
 ### **Paso 4: Generar Informe**
 1. **Haz clic** en "📄 Generar Informe Técnico"
-2. **Espera** mientras se crean los gráficos (segundos)
-3. **Descarga** automáticamente el archivo Word
+2. **Espera** mientras se procesan los datos y se crean los gráficos
+3. **Descarga** automáticamente el archivo Word con un clic
 
 ## �📁 Estructura del proyecto
 
@@ -219,6 +228,7 @@ El sistema busca y reemplaza automáticamente **todos los marcadores** en la pla
 - Asegúrate de copiar **toda la fila** desde Excel/Google Sheets
 - Incluye **todas las columnas** (debe tener 60 campos)
 - Usa **Ctrl+C** para copiar y **Ctrl+V** para pegar
+- Haz clic en "📥 Cargar Datos" después de pegar
 
 ### **❌ "Template file not found"**  
 **Causa**: Falta el archivo de plantilla
@@ -247,6 +257,14 @@ El sistema busca y reemplaza automáticamente **todos los marcadores** en la pla
 - Verifica el formato exacto: `{{ campo }}` (con espacios)
 - No uses `{{campo}}` (sin espacios)
 - Revisa mayúsculas y minúsculas
+
+### **⚠️ "Font family 'Roboto Mono' not found"**
+**Causa**: Advertencia normal - la fuente Roboto Mono no está instalada en el servidor
+**Solución**:
+- **No es un error crítico** - el sistema funciona correctamente
+- Se usa automáticamente una fuente monoespaciada alternativa
+- Los documentos mantienen consistencia de formato
+- En Streamlit Cloud esto es comportamiento esperado y normal
 
 ## 🛠️ **Personalización y Configuración**
 
@@ -354,6 +372,14 @@ En `utils.py`, modificar las secciones de colores:
 - **Escalable** para múltiples usuarios simultáneos
 - **Acceso desde cualquier dispositivo** con internet
 
+### **🔤 Consistencia de Fuentes (NUEVO)**
+- **Preservación de formato**: Mantiene el formato original de la plantilla durante el reemplazo de datos
+- **Aplicación automática**: Aplica fuente Roboto Mono consistente a todo el documento para evitar mezcla de tipos
+- **Preservación de tamaños**: Mantiene los tamaños de fuente originales de la plantilla (títulos, cuerpo, etc.)
+- **Formato profesional**: Todos los documentos usan Roboto Mono con tamaños originales para apariencia uniforme
+- **Fallback inteligente**: Si Roboto Mono no está disponible, usa fuente monoespaciada del sistema
+- **Solución técnica**: Corrige el problema común de inconsistencia de fuentes en documentos generados automáticamente
+
 ### **🔒 Seguridad y Privacidad**
 - **Sin almacenamiento permanente** de datos sensibles
 - **Limpieza automática** después de cada uso
@@ -380,6 +406,37 @@ Para soporte avanzado o personalizaciones:
 - Reporta problemas específicos con **capturas de pantalla**
 - Incluye **ejemplos de los datos** que causan errores
 - Especifica **navegador y sistema operativo** usado
+
+---
+
+## 📈 **Estado Actual del Sistema**
+
+### **✅ Completamente Funcional - Versión 1.2**
+- **Fecha de última actualización**: Octubre 2025
+- **Interfaz Streamlit**: Totalmente operativa con categorización visual de datos
+- **Fuente consistente**: Roboto Mono aplicada automáticamente (con fallback inteligente)
+- **4 gráficos automáticos**: Presencia de plagas, matriz de riesgo, donas de riesgos
+- **60 campos procesados**: Extracción y edición completa de datos
+- **Descarga directa**: Archivos Word generados instantáneamente
+
+### **🔧 Notas Técnicas Importantes**
+- **Advertencias de fuente**: "Font family 'Roboto Mono' not found" es normal en servidores cloud
+- **Deprecaciones Streamlit**: Advertencias sobre `use_container_width` no afectan funcionalidad
+- **Compatibilidad**: Funciona perfectamente en local y Streamlit Cloud
+- **Rendimiento**: Generación de informes en 2-5 segundos típicamente
+
+### **📁 Archivos del Proyecto**
+```
+informes-tecnicos/
+├── app.py                    # 33.4 KB - Aplicación Streamlit principal
+├── main.py                   # 5.9 KB - Versión línea de comandos  
+├── config.py                 # 22.7 KB - Configuración y parseo de datos
+├── utils.py                  # 41.8 KB - Funciones de generación y gráficos
+├── requirements.txt          # 69 B - Dependencias Python
+├── INFORME TÉCNICO FINAL.docx # 2.6 MB - Plantilla Word requerida
+├── logo2021.png             # 433 KB - Logo corporativo
+└── README.md                # 16.7 KB - Esta documentación
+```
 
 ---
 

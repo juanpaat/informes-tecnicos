@@ -57,7 +57,7 @@ class ReportGenerator:
     
     def _replace_in_paragraph(self, paragraph, data: Dict[str, Any], location: str = "") -> int:
         """
-        Reemplazar marcadores en un solo párrafo
+        Reemplazar marcadores en un solo párrafo preservando formato de fuente
         
         Args:
             paragraph: Objeto párrafo de Word
@@ -95,7 +95,36 @@ class ReportGenerator:
                 replacement_made = False
                 for run_idx, run in enumerate(paragraph.runs):
                     if placeholder in run.text:
+                        # Preservar las propiedades de fuente antes del reemplazo
+                        original_font_props = {}
+                        if run.font:
+                            original_font_props = {
+                                'name': run.font.name,
+                                'size': run.font.size,
+                                'bold': run.font.bold,
+                                'italic': run.font.italic,
+                                'underline': run.font.underline,
+                                'color': run.font.color.rgb if run.font.color.rgb else None
+                            }
+                        
+                        # Realizar el reemplazo
                         run.text = run.text.replace(placeholder, str(value))
+                        
+                        # Restaurar propiedades de fuente si se perdieron (mantener tamaño original)
+                        if original_font_props and run.font:
+                            if original_font_props.get('name') and not run.font.name:
+                                run.font.name = original_font_props['name']
+                            if original_font_props.get('size') and not run.font.size:
+                                run.font.size = original_font_props['size']
+                            if original_font_props.get('bold') is not None:
+                                run.font.bold = original_font_props['bold']
+                            if original_font_props.get('italic') is not None:
+                                run.font.italic = original_font_props['italic']
+                            if original_font_props.get('underline') is not None:
+                                run.font.underline = original_font_props['underline']
+                            if original_font_props.get('color'):
+                                run.font.color.rgb = original_font_props['color']
+                        
                         replaced_in_paragraph += 1
                         replacement_made = True
                         break  # Solo reemplazar una vez por párrafo
@@ -110,6 +139,7 @@ class ReportGenerator:
     def _replace_across_runs(self, paragraph, placeholder: str, replacement: str) -> bool:
         """
         Manejar marcadores que abarcan múltiples runs debido al formato
+        preservando las propiedades de fuente originales
         
         Args:
             paragraph: El párrafo que contiene el marcador
@@ -124,8 +154,31 @@ class ReportGenerator:
         if placeholder not in full_text:
             return False
         
-        # Estrategia: Limpiar todos los runs y crear uno nuevo con texto reemplazado
+        # Estrategia: Preservar formato del primer run que contiene parte del placeholder
         try:
+            # Encontrar el primer run con formato para usar como referencia
+            reference_run = None
+            for run in paragraph.runs:
+                if run.text.strip():  # Buscar el primer run no vacío
+                    reference_run = run
+                    break
+            
+            # Si no hay run de referencia, usar el primero disponible
+            if reference_run is None and paragraph.runs:
+                reference_run = paragraph.runs[0]
+            
+            # Guardar propiedades de fuente del run de referencia (incluyendo tamaño original)
+            font_properties = {}
+            if reference_run and reference_run.font:
+                font_properties = {
+                    'name': reference_run.font.name,
+                    'size': reference_run.font.size,
+                    'bold': reference_run.font.bold,
+                    'italic': reference_run.font.italic,
+                    'underline': reference_run.font.underline,
+                    'color': reference_run.font.color.rgb if reference_run.font.color.rgb else None
+                }
+            
             # Reemplazar en el texto completo
             new_text = full_text.replace(placeholder, replacement)
             
@@ -133,8 +186,23 @@ class ReportGenerator:
             for run in paragraph.runs[::-1]:  # Orden inverso para evitar problemas de índice
                 run._element.getparent().remove(run._element)
             
-            # Agregar nuevo run con el texto reemplazado
+            # Agregar nuevo run con el texto reemplazado y formato preservado
             new_run = paragraph.add_run(new_text)
+            
+            # Aplicar las propiedades de fuente guardadas (preservando tamaño original)
+            if font_properties and new_run.font:
+                if font_properties.get('name'):
+                    new_run.font.name = font_properties['name']
+                if font_properties.get('size'):
+                    new_run.font.size = font_properties['size']
+                if font_properties.get('bold') is not None:
+                    new_run.font.bold = font_properties['bold']
+                if font_properties.get('italic') is not None:
+                    new_run.font.italic = font_properties['italic']
+                if font_properties.get('underline') is not None:
+                    new_run.font.underline = font_properties['underline']
+                if font_properties.get('color'):
+                    new_run.font.color.rgb = font_properties['color']
             
             return True
             
@@ -249,9 +317,74 @@ class ReportGenerator:
             run = paragraph.add_run()
             run.add_picture(image_path, width=Cm(width), height=Cm(height))
     
+    def standardize_document_fonts(self, default_font_name: str = "Roboto Mono") -> None:
+        """
+        Estandarizar solo el nombre de la fuente en todo el documento para mantener consistencia
+        Preserva los tamaños de fuente originales de la plantilla
+        
+        Args:
+            default_font_name: Nombre de la fuente por defecto a aplicar
+        """
+        try:
+            # Estandarizar fuentes en párrafos principales
+            for paragraph in self.document.paragraphs:
+                for run in paragraph.runs:
+                    if run.font:
+                        # Solo establecer fuente si no está ya definida, preservar tamaño original
+                        if not run.font.name:
+                            run.font.name = default_font_name
+            
+            # Estandarizar fuentes en tablas
+            for table in self.document.tables:
+                for row in table.rows:
+                    for cell in row.cells:
+                        for paragraph in cell.paragraphs:
+                            for run in paragraph.runs:
+                                if run.font:
+                                    # Solo establecer fuente si no está ya definida, preservar tamaño original
+                                    if not run.font.name:
+                                        run.font.name = default_font_name
+        
+        except Exception as e:
+            print(f"Advertencia: No se pudo estandarizar fuentes: {e}")
+    
+    def apply_consistent_font(self, font_name: str = "Roboto Mono") -> None:
+        """
+        Aplicar una fuente consistente a todo el documento, preservando tamaños originales
+        
+        Args:
+            font_name: Nombre de la fuente a aplicar
+        """
+        try:
+            print(f"Aplicando fuente consistente: {font_name} (preservando tamaños originales)")
+            
+            # Aplicar fuente a párrafos principales, preservando tamaños
+            for paragraph in self.document.paragraphs:
+                for run in paragraph.runs:
+                    if run.font:
+                        run.font.name = font_name
+                        # No tocar run.font.size - preservar tamaño original
+            
+            # Aplicar fuente a tablas, preservando tamaños
+            for table in self.document.tables:
+                for row in table.rows:
+                    for cell in row.cells:
+                        for paragraph in cell.paragraphs:
+                            for run in paragraph.runs:
+                                if run.font:
+                                    run.font.name = font_name
+                                    # No tocar run.font.size - preservar tamaño original
+            
+            print("✅ Fuente consistente aplicada exitosamente")
+        
+        except Exception as e:
+            print(f"❌ Error al aplicar fuente consistente: {e}")
+    
     def save(self) -> None:
         """Guardar el documento y limpiar archivos temporales"""
         try:
+            # Estandarizar fuentes antes de guardar para asegurar consistencia
+            self.standardize_document_fonts()
             self.document.save(self.output_path)
         finally:
             # Limpiar archivos de imagen temporales inmediatamente después de guardar

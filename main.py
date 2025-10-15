@@ -95,6 +95,12 @@ def main():
         generator.replace_placeholders(data_dict)
         
         # ============================================================================
+        # PASO 4.5: APLICAR FUENTE CONSISTENTE PARA EVITAR PROBLEMAS DE FORMATO
+        # ============================================================================
+        logger.info("Aplicando formato de fuente consistente...")
+        generator.apply_consistent_font(font_name="Roboto Mono")
+        
+        # ============================================================================
         # PASO 5: GUARDAR DOCUMENTO FINAL
         # ============================================================================
         logger.info(f"Guardando informe en {config.OUTPUT_PATH}...")

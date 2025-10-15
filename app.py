@@ -644,6 +644,11 @@ def generate_report() -> None:
             
             generator.replace_placeholders(st.session_state.parsed_data)
             
+            # Paso 2.5: Aplicar fuente consistente para evitar problemas de formato
+            status_text.text("🔤 Aplicando formato consistente...")
+            generator.apply_consistent_font(font_name="Roboto Mono")
+            progress_bar.progress(95)
+            
             # Paso 3: Guardar documento
             status_text.text("💾 Guardando documento...")
             generator.save()
@@ -776,7 +781,7 @@ def main():
     st.markdown("""
     <div style="text-align: center; color: #7f8c8d; padding: 1rem;">
         <p>Sistema de Informes Técnicos - Control de Plagas</p>
-        <p><small>Versión 1.0 | Desarrollado para automatizar la generación de informes</small></p>
+        <p><small>Versión 1.1 | Desarrollado para automatizar la generación de informes con formato consistente</small></p>
     </div>
     """, unsafe_allow_html=True)
 
