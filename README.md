@@ -6,7 +6,24 @@ Este sistema automatiza la creación de informes técnicos para servicios de con
 
 ## 🚀 Cómo usar el sistema
 
-### 1. Preparación inicial
+### 🌐 **NUEVO: Interfaz Web (Recomendado)**
+```bash
+# 1. Instalar dependencias
+pip install -r requirements.txt
+
+# 2. Ejecutar aplicación web
+streamlit run app.py
+
+# 3. Usar desde el navegador
+# - Se abre automáticamente en http://localhost:8501
+# - Pegar datos de Excel/Google Sheets
+# - Revisar y editar campos
+# - Generar y descargar informe
+```
+
+### 💻 **Método Tradicional (Línea de Comandos)**
+
+#### 1. Preparación inicial
 ```bash
 # Asegúrate de estar en el directorio del proyecto
 cd /ruta/a/informes-tecnicos
@@ -15,7 +32,7 @@ cd /ruta/a/informes-tecnicos
 pip install -r requirements.txt
 ```
 
-### 2. Configurar tus datos
+#### 2. Configurar tus datos
 1. **Abre el archivo `config.py`**
 2. **Busca la línea que dice `SPREADSHEET_LINE =`**
 3. **Reemplaza todo el texto entre las comillas con los datos de tu hoja de cálculo**
@@ -25,7 +42,7 @@ pip install -r requirements.txt
 SPREADSHEET_LINE = "11/10/2025 19:28:13	3692	U.R. CAMINO VERDE DEL BOSQUE..."
 ```
 
-### 3. Ejecutar el sistema
+#### 3. Ejecutar el sistema
 ```bash
 python main.py
 ```
@@ -33,16 +50,32 @@ python main.py
 **¡Eso es todo!** El sistema creará automáticamente tu informe con el nombre:
 `Informe_[NOMBRE_CLIENTE]_[FECHA].docx`
 
+---
+
+### 🆚 **¿Cuál método usar?**
+
+| Característica | Interfaz Web | Línea de Comandos |
+|---|---|---|
+| **Facilidad** | ⭐⭐⭐⭐⭐ Muy fácil | ⭐⭐⭐ Requiere editar código |
+| **Velocidad** | ⭐⭐⭐⭐⭐ Muy rápido | ⭐⭐⭐⭐ Rápido |
+| **Edición** | ✅ Campos editables | ❌ Solo en código |
+| **Vista previa** | ✅ Ve todos los datos | ❌ No disponible |
+| **Usuarios** | 👥 Cualquier usuario | 👨‍💻 Usuarios técnicos |
+
+**💡 Recomendación:** Usa la **Interfaz Web** (`streamlit run app.py`) para mayor facilidad y funcionalidad.
+
 ## 📁 Estructura del proyecto
 
 ```
 informes-tecnicos/
-├── main.py                          # Archivo principal - ejecuta todo el proceso
-├── config.py                        # Configuración - aquí pones tus datos
+├── app.py                           # Aplicación web Streamlit (RECOMENDADO)
+├── main.py                          # Archivo línea de comandos (tradicional)
+├── config.py                        # Configuración y procesamiento de datos
 ├── utils.py                         # Funciones internas del sistema
 ├── requirements.txt                 # Lista de programas necesarios
 ├── INFORME TÉCNICO FINAL.docx       # Plantilla (DEBE existir)
-└── README.md                        # Esta guía
+├── README.md                        # Esta guía
+└── README_WEB.md                    # Guía específica de la app web
 ```
 
 ## 🔧 Archivos explicados en detalle

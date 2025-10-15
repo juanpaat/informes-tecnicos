@@ -251,23 +251,25 @@ class ReportGenerator:
     
     def save(self) -> None:
         """Guardar el documento y limpiar archivos temporales"""
-        self.document.save(self.output_path)
-        
-        # Limpiar archivos de imagen temporales
-        for temp_file in self.temp_images:
-            try:
-                os.remove(temp_file)
-            except Exception:
-                pass
+        try:
+            self.document.save(self.output_path)
+        finally:
+            # Limpiar archivos de imagen temporales inmediatamente después de guardar
+            self._cleanup_temp_files()
     
-    def __del__(self):
-        """Limpiar cuando el objeto es destruido"""
+    def _cleanup_temp_files(self) -> None:
+        """Limpiar archivos temporales"""
         for temp_file in self.temp_images:
             try:
                 if os.path.exists(temp_file):
                     os.remove(temp_file)
             except Exception:
                 pass
+        self.temp_images.clear()
+    
+    def __del__(self):
+        """Limpiar cuando el objeto es destruido"""
+        self._cleanup_temp_files()
 
 
 def parse_spreadsheet_line(line: str, delimiter: str = '\t') -> List[str]:
@@ -591,7 +593,7 @@ def plot_presencia_plagas(values, save_path=None):
     # Título y etiquetas de ejes
     plt.ylabel("Nivel de infestación", fontsize=6)
     plt.xticks(rotation=45, ha='right', fontsize=4)
-    plt.yticks([0, 1, 2, 3, 4], fontsize=6)
+    plt.yticks([0, 1, 2, 3, 4], ['Mínimo', 'Leve', 'Bajo', 'Medio', 'Alto'], fontsize=6)
 
     # Límite del eje Y (ajustar según sea necesario)
     plt.ylim(0, 4)
@@ -740,7 +742,7 @@ def create_external_risk_donut_plot(
     """
     
     # Datos para el gráfico
-    nombres = [
+    nombres_completos = [
         'Otros',
         'Limpieza del vecindario', 
         'Manejo de basuras del vecindario',
@@ -754,7 +756,7 @@ def create_external_risk_donut_plot(
         'Locales de comida cerca'
     ]
     
-    valores = [
+    valores_completos = [
         risk_genera_vecindario,
         risk_limpieza_vecindario,
         risk_manejo_basuras_vecindario,
@@ -768,6 +770,19 @@ def create_external_risk_donut_plot(
         risk_locales_comida
     ]
     
+    # Filtrar valores iguales a 0 para evitar complejidad y solapamiento en el gráfico
+    nombres = []
+    valores = []
+    for i, valor in enumerate(valores_completos):
+        if valor > 0:  # Solo incluir valores mayores a 0
+            nombres.append(nombres_completos[i])
+            valores.append(valor)
+    
+    # Si no hay valores mayores a 0, crear un gráfico vacío con mensaje
+    if not valores:
+        nombres = ['Sin riesgos detectados']
+        valores = [1]
+    
     fig, ax = plt.subplots(figsize=figsize)
     
     # Crear el círculo central para hacer el gráfico de dona
@@ -780,7 +795,7 @@ def create_external_risk_donut_plot(
                                      wedgeprops={'linewidth': 2, 'edgecolor': 'white'},
                                      colors=colores,
                                      autopct='%1.1f%%',
-                                     textprops={'fontsize': 6},
+                                     textprops={'fontsize': 6, 'fontfamily': 'Roboto Mono'},
                                      pctdistance=0.85,
                                      labeldistance=1.2,
                                      rotatelabels=False,
@@ -791,7 +806,7 @@ def create_external_risk_donut_plot(
     
     # Agregar título en el centro
     plt.text(0, 0, 'Riesgos\nExternos', ha='center', va='center', 
-             fontsize=6, fontweight='bold', color='#333333')
+             fontsize=7, fontweight='bold', color='#333333', fontfamily='Roboto Mono')
     
     plt.tight_layout()
     
@@ -845,7 +860,7 @@ def create_internal_risk_donut_plot(
     """
     
     # Datos para el gráfico
-    nombres = [
+    nombres_completos = [
         'Otros',
         'Limpieza del establecimiento',
         'Almacenamiento',
@@ -860,7 +875,7 @@ def create_internal_risk_donut_plot(
         'Presencia de animales/mascotas'
     ]
     
-    valores = [
+    valores_completos = [
         risk_general_establecimiento,
         risk_limpieza_establecimiento,
         risk_almacenamiento_establecimiento,
@@ -875,6 +890,19 @@ def create_internal_risk_donut_plot(
         risk_presencia_animales
     ]
     
+    # Filtrar valores iguales a 0 para evitar complejidad y solapamiento en el gráfico
+    nombres = []
+    valores = []
+    for i, valor in enumerate(valores_completos):
+        if valor > 0:  # Solo incluir valores mayores a 0
+            nombres.append(nombres_completos[i])
+            valores.append(valor)
+    
+    # Si no hay valores mayores a 0, crear un gráfico vacío con mensaje
+    if not valores:
+        nombres = ['Sin riesgos detectados']
+        valores = [1]
+    
     fig, ax = plt.subplots(figsize=figsize)
     
     # Crear el círculo central para hacer el gráfico de dona
@@ -887,7 +915,7 @@ def create_internal_risk_donut_plot(
                                      wedgeprops={'linewidth': 1, 'edgecolor': 'white'},
                                      colors=colores,
                                      autopct='%1.1f%%',
-                                     textprops={'fontsize': 6},
+                                     textprops={'fontsize': 6, 'fontfamily': 'Roboto Mono'},
                                      pctdistance=0.85)
     
     # Agregar el círculo central
@@ -895,7 +923,7 @@ def create_internal_risk_donut_plot(
     
     # Agregar título en el centro
     plt.text(0, 0, 'Riesgos\nInternos', ha='center', va='center', 
-             fontsize=6, fontweight='bold', color='#333333')
+             fontsize=7, fontweight='bold', color='#333333', fontfamily='Roboto Mono')
     
     plt.tight_layout()
     

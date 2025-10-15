@@ -58,6 +58,10 @@ class ReportConfig:
         # Analizar la línea de hoja de cálculo
         values = parse_spreadsheet_line(self.SPREADSHEET_LINE, self.DELIMITER)
         
+        # Si solo hay 59 valores (falta el último campo), agregar valor por defecto
+        if len(values) == 59:
+            values.append("Sin información")
+        
         # Asignar cada valor a una variable nombrada
         # PERSONALIZAR ESTOS BASÁNDOSE EN COLUMNAS DE HOJA DE CÁLCULO
         try:
@@ -65,7 +69,7 @@ class ReportConfig:
             self.identificador = values[1]
             self.cliente = values[2].title()
             self.sede = values[3].title()
-            self.direccion = remove_double_spaces(values[4])
+            self.direccion = remove_double_spaces(values[4]).title()
             self.municipio = values[5].title()
             self.telefono = values[6]
             self.sector = values[7].title()
@@ -91,12 +95,39 @@ class ReportConfig:
             self.raton_tejado = values[27]
             self.larvas_mosquitos = values[28]
             self.plaguicidas = values[29]
-            self.observaciones = values[30]
+            self.observaciones = sentence_case_after_period(values[30])
             self.reco_generales = values[31]
             self.reco_especificas_1 = values[32]
             self.reco_especificas_2 = values[33]
             self.reco_especificas_3 = values[34]
             self.periodicidad = values[35]
+            
+            # Almacenar valores originales de texto para la interfaz
+            self.genera_vecindario_text = values[36]
+            self.limpieza_vecindario_text = values[37]
+            self.manejo_basuras_vecindario_text = values[38]
+            self.infraes_vecindario_text = values[39]
+            self.ilumina_vecindario_text = values[40]
+            self.animal_cercanias_text = values[41]
+            self.construccion_cerca_text = values[42]
+            self.zonas_verdes_cerca_text = values[43]
+            self.cuerpos_de_agua_cerca_text = values[44]
+            self.desagues_cerca_text = values[45]
+            self.locales_comida_text = values[46]
+            self.general_establecimiento_text = values[47]
+            self.limpieza_establecimiento_text = values[48]
+            self.almacenamiento_establecimiento_text = values[49]
+            self.iluminacion_establecimiento_text = values[50]
+            self.capacitacion_personal_text = values[51]
+            self.sellamiento_puertas_text = values[52]
+            self.ventilacion_establecimiento_text = values[53]
+            self.grietas_instalaciones_text = values[54]
+            self.entrada_salida_material_text = values[55]
+            self.acumulacion_objetos_text = values[56]
+            self.areas_manipulacion_comida_text = values[57]
+            self.presencia_animales_text = values[58]
+            
+            # Convertir a valores numéricos para cálculos
             self.genera_vecindario = map_rating_to_score(values[36])
             self.limpieza_vecindario = map_rating_to_score(values[37])
             self.manejo_basuras_vecindario = map_rating_to_score(values[38])
