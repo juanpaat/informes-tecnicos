@@ -348,6 +348,16 @@ class ReportGenerator:
         except Exception as e:
             print(f"Advertencia: No se pudo estandarizar fuentes: {e}")
     
+    def save(self) -> None:
+        """Guardar el documento y limpiar archivos temporales"""
+        try:
+            # Estandarizar fuentes antes de guardar para asegurar consistencia
+            self.standardize_document_fonts()
+            self.document.save(self.output_path)
+        finally:
+            # Limpiar archivos de imagen temporales inmediatamente después de guardar
+            self._cleanup_temp_files()
+    
     def apply_consistent_font(self, font_name: str = "Roboto Mono") -> None:
         """
         Aplicar una fuente consistente a todo el documento, preservando tamaños originales
@@ -379,17 +389,7 @@ class ReportGenerator:
         
         except Exception as e:
             print(f"❌ Error al aplicar fuente consistente: {e}")
-    
-    def save(self) -> None:
-        """Guardar el documento y limpiar archivos temporales"""
-        try:
-            # Estandarizar fuentes antes de guardar para asegurar consistencia
-            self.standardize_document_fonts()
-            self.document.save(self.output_path)
-        finally:
-            # Limpiar archivos de imagen temporales inmediatamente después de guardar
-            self._cleanup_temp_files()
-    
+
     def _cleanup_temp_files(self) -> None:
         """Limpiar archivos temporales"""
         for temp_file in self.temp_images:
