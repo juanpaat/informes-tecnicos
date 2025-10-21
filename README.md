@@ -74,6 +74,12 @@ python main.py
 - **Gráfico de dona**: Distribución de riesgos externos
 - **Gráfico de dona**: Distribución de riesgos internos
 
+### **🤖 Corrección Automática de Texto con IA (NUEVO)**
+- **Integración LangChain + OpenAI**: Corrección inteligente de español latinoamericano
+- **Campos corregidos automáticamente**: observaciones, recomendaciones específicas, antecedentes
+- **Preservación del contenido**: Mantiene significado, tono y registro originales
+- **Configuración opcional**: Funciona sin API key (devuelve texto original)
+
 ### **🌟 Ventajas de la Interfaz Web**
 
 | Característica | Descripción |
@@ -83,6 +89,7 @@ python main.py
 | **✏️ Edición visual** | Modifica cualquier campo antes de generar |
 | **📊 Vista previa** | Ve todos los datos organizados por categorías |
 | **🔤 Fuente consistente** | Aplica automáticamente Roboto Mono para uniformidad |
+| **🤖 Corrección IA** | LangChain + OpenAI corrigen automáticamente textos en español |
 | **⚡ Rápido** | Genera informes en segundos |
 | **☁️ En la nube** | Acceso desde cualquier lugar |
 
@@ -121,12 +128,104 @@ informes-tecnicos/
 ├── app.py                           # 🌐 Aplicación web Streamlit (PRINCIPAL)
 ├── main.py                          # 💻 Versión línea de comandos (alternativa)
 ├── config.py                        # ⚙️ Configuración y cálculos automáticos
-├── utils.py                         # 🔧 Funciones de generación y gráficos
-├── requirements.txt                 # 📦 Dependencias de Python
+├── utils.py                         # 🔧 Funciones de generación, gráficos y corrección IA
+├── requirements.txt                 # 📦 Dependencias de Python (incluye LangChain)
+├── .env                             # 🔑 Variables de entorno (OPENAI_API_KEY)
+├── .env.example                     # 📋 Ejemplo de configuración de variables
 ├── INFORME TÉCNICO FINAL.docx       # 📋 Plantilla Word (REQUERIDA)
 ├── logo2021.png                     # 🎨 Logo de la empresa
 └── README.md                        # 📖 Esta guía
 ```
+
+### **🤖 Corrección Automática de Texto con IA**
+
+El sistema integra **LangChain + OpenAI** para corregir automáticamente textos en español latinoamericano, mejorando la calidad profesional de los informes.
+
+#### **📝 Campos Corregidos Automáticamente**
+- **`obs_generales`**: Observaciones generales del servicio
+- **`reco_especificas_1`**: Primera recomendación específica  
+- **`reco_especificas_2`**: Segunda recomendación específica
+- **`reco_especificas_3`**: Tercera recomendación específica
+- **`antecedentes`**: Información de antecedentes del cliente
+
+#### **🔧 Configuración de OpenAI API**
+
+**Para habilitar las correcciones automáticas:**
+
+1. **Obtener API Key de OpenAI**:
+   - Visita [platform.openai.com](https://platform.openai.com)
+   - Crea una cuenta o inicia sesión
+   - Ve a "API Keys" y genera una nueva clave
+   - Copia la clave (comienza con `sk-...`)
+
+2. **Configurar según el entorno**:
+
+   **🥇 Opción 1: Streamlit Cloud (Recomendado para producción)**
+   ```toml
+   # En la configuración de Streamlit Cloud, agregar en "Secrets":
+   OPENAI_API_KEY = "tu_clave_aqui"
+   ```
+
+   **🥈 Opción 2: Testing Local (.env)**
+   ```bash
+   # Crear archivo .env en el directorio del proyecto
+   echo "OPENAI_API_KEY=tu_clave_aqui" > .env
+   ```
+
+   **🥉 Opción 3: Variable de Entorno del Sistema**
+   ```bash
+   # Linux/Mac
+   export OPENAI_API_KEY="tu_clave_aqui"
+   
+   # Windows
+   set OPENAI_API_KEY=tu_clave_aqui
+   ```
+
+#### **🔄 Jerarquía de Configuración (NUEVO)**
+
+El sistema busca la API key en este orden de prioridad:
+
+1. **🏆 Streamlit Secrets** (`.streamlit/secrets.toml` o configuración cloud)
+2. **🔧 Archivo .env** (para desarrollo local)
+3. **💻 Variable de entorno del sistema**
+4. **⚠️ Sin API key** (funciona sin correcciones automáticas)
+
+#### **⚙️ Funcionamiento**
+
+**Con API Key configurada**:
+- ✅ **Corrección automática** aplicada a todos los campos especificados
+- ✅ **Mejora ortografía, gramática y puntuación** 
+- ✅ **Preserva significado y tono original**
+- ✅ **Optimizado para español latinoamericano**
+
+**Sin API Key**:
+- ⚠️ **Advertencia en consola** pero el sistema funciona normalmente
+- ✅ **Textos originales** se mantienen sin cambios
+- ✅ **Generación de informes** continúa sin interrupciones
+
+#### **🎯 Prompt de Corrección Especializado**
+
+El sistema utiliza un prompt específicamente diseñado para corrección de español:
+
+```
+Eres un experto lingüista y corrector de estilo especializado en español latinoamericano.
+Tu función es reescribir textos en español para mejorar su ortografía, gramática, puntuación y coherencia,
+manteniendo el significado original, el tono natural y el registro adecuado.
+No resumas, no traduzcas, no cambies el contenido factual.
+Simplemente corrige y mejora la redacción cuando sea necesario.
+Si el texto ya está bien escrito, devuélvelo sin cambios.
+```
+
+#### **💡 Características de la Corrección IA**
+
+| Aspecto | Descripción |
+|---|---|
+| **Modelo usado** | GPT-3.5-turbo (balance calidad/costo) |
+| **Temperatura** | 0.1 (precisión máxima) |
+| **Límite tokens** | 1000 por campo |
+| **Idioma objetivo** | Español latinoamericano |
+| **Preservación** | Contenido factual y tono original |
+| **Fallback** | Funciona sin API key (devuelve original) |
 
 ## 🧠 **Inteligencia del Sistema**
 
@@ -258,7 +357,30 @@ El sistema busca y reemplaza automáticamente **todos los marcadores** en la pla
 - No uses `{{campo}}` (sin espacios)
 - Revisa mayúsculas y minúsculas
 
-### **⚠️ "Font family 'Roboto Mono' not found"**
+### **❌ "LangChain: OPENAI_API_KEY no configurada"**
+**Causa**: API key de OpenAI no está configurada en ninguna fuente
+**Solución**:
+- Obtén tu API key en [platform.openai.com](https://platform.openai.com/api-keys)
+- **Streamlit Cloud**: Agrega `OPENAI_API_KEY` en la configuración de Secrets
+- **Local Testing**: Crea archivo `.env` con `OPENAI_API_KEY=tu_clave_aqui`
+- **Sistema**: Configura como variable de entorno del sistema
+- **Funcionalidad**: El sistema funciona sin API key (usa textos originales)
+- **Jerarquía**: El sistema busca en Streamlit Secrets → .env → variables de entorno
+
+### **❌ "Error al corregir texto con LangChain"**
+**Causa**: Problema de conectividad o límites de API de OpenAI
+**Solución**:
+- Verifica tu saldo de créditos en OpenAI
+- Revisa tu conexión a internet
+- Espera unos minutos si hay límites de velocidad
+- **Funcionalidad**: El sistema continúa con textos originales automáticamente
+
+### **❌ "Import langchain could not be resolved"**
+**Causa**: Dependencias de LangChain no instaladas
+**Solución**:
+- Ejecuta: `pip install -r requirements.txt`
+- Verifica que incluya: `langchain>=0.1.0` y `langchain-openai>=0.1.0`
+- Reinicia el servidor Streamlit después de instalar
 **Causa**: Advertencia normal - la fuente Roboto Mono no está instalada en el servidor
 **Solución**:
 - **No es un error crítico** - el sistema funciona correctamente
@@ -349,6 +471,7 @@ En `utils.py`, modificar las secciones de colores:
 - ✅ **Interfaz web profesional** con Streamlit
 - ✅ **Procesamiento automático** de 60 campos de datos  
 - ✅ **4 gráficos profesionales** generados automáticamente
+- ✅ **Corrección IA automática** con LangChain + OpenAI (español latinoamericano)
 - ✅ **Cálculo inteligente** de riesgos con pesos configurables
 - ✅ **Reemplazo completo** de marcadores en plantilla Word
 - ✅ **Descarga directa** sin archivos residuales en servidor
@@ -411,9 +534,11 @@ Para soporte avanzado o personalizaciones:
 
 ## 📈 **Estado Actual del Sistema**
 
-### **✅ Completamente Funcional - Versión 1.2**
+### **✅ Completamente Funcional - Versión 1.4**
 - **Fecha de última actualización**: Octubre 2025
 - **Interfaz Streamlit**: Totalmente operativa con categorización visual de datos
+- **Corrección IA**: LangChain + OpenAI con jerarquía inteligente de configuración
+- **API Key Hierarchy**: Streamlit Secrets → .env → variables de entorno → sin API key
 - **Fuente consistente**: Roboto Mono aplicada automáticamente (con fallback inteligente)
 - **4 gráficos automáticos**: Presencia de plagas, matriz de riesgo, donas de riesgos
 - **60 campos procesados**: Extracción y edición completa de datos
@@ -428,14 +553,16 @@ Para soporte avanzado o personalizaciones:
 ### **📁 Archivos del Proyecto**
 ```
 informes-tecnicos/
-├── app.py                    # 33.4 KB - Aplicación Streamlit principal
+├── app.py                    # 35.2 KB - Aplicación Streamlit principal
 ├── main.py                   # 5.9 KB - Versión línea de comandos  
 ├── config.py                 # 22.7 KB - Configuración y parseo de datos
-├── utils.py                  # 41.8 KB - Funciones de generación y gráficos
-├── requirements.txt          # 69 B - Dependencias Python
+├── utils.py                  # 45.1 KB - Funciones de generación, gráficos y corrección IA
+├── requirements.txt          # 118 B - Dependencias Python (incluye LangChain)
+├── .env                      # Variable - Archivo de configuración OpenAI API Key
+├── .env.example              # 120 B - Ejemplo de configuración de variables
 ├── INFORME TÉCNICO FINAL.docx # 2.6 MB - Plantilla Word requerida
 ├── logo2021.png             # 433 KB - Logo corporativo
-└── README.md                # 16.7 KB - Esta documentación
+└── README.md                # 19.8 KB - Esta documentación
 ```
 
 ---

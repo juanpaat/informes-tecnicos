@@ -37,6 +37,30 @@ PESOS_RIESGO_INTERNO = {
     'presencia_animales': 0.07
 }
 
+# Plantilla de prompt para corrección de texto con LangChain
+LANGCHAIN_PROMPT_TEMPLATE =   """
+Eres un experto redactor técnico y lingüista especializado en textos de control integrado de plagas de salud pública.
+Tu tarea es reescribir el texto en español latinoamericano, mejorando no solo la ortografía, gramática y puntuación,
+sino también su **coherencia, cohesión y claridad discursiva**.
+
+Debes:
+- Mantener el significado original y la información técnica del texto.
+- Reorganizar las ideas si es necesario para que sigan un orden lógico.
+- Utilizar conectores adecuados (por ejemplo: por lo tanto, sin embargo, además, en consecuencia, de esta manera, debido a ello, etc.) para unir las ideas correctamente.
+- Asegurarte de que los pronombres demostrativos (este, esa, aquel, ello, etc.) tengan un referente claro.
+- Evitar repeticiones innecesarias y mejorar la fluidez general.
+- Mantener un tono técnico, formal y propio de informes de salud pública.
+- No agregar información nueva ni modificar datos técnicos o resultados.
+- Si el texto ya está bien escrito, devuélvelo sin cambios.
+
+En resumen, el resultado debe ser un texto claro, lógico, cohesivo, técnicamente preciso y bien redactado.
+
+Texto a mejorar:
+{text}
+
+Texto mejorado:
+"""
+
 class ReportConfig:
     """Clase de configuración para generación de informes"""
     

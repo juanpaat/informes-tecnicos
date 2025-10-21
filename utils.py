@@ -7,9 +7,42 @@ import tempfile
 from typing import Dict, Any, Tuple, List
 import re
 import numpy as np
+import streamlit as st
+from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
 
 # Usar backend no interactivo para matplotlib
 matplotlib.use('Agg')
+
+
+def get_openai_api_key() -> str:
+    """
+    Obtener la API key de OpenAI con orden de prioridad:
+    1. Streamlit secrets (para deployment en cloud)
+    2. Archivo .env (para testing local)
+    3. Variable de entorno del sistema
+    
+    Returns:
+        API key si se encuentra, None si no está configurada
+    """
+    # Prioridad 1: Streamlit secrets
+    try:
+        return st.secrets["OPENAI_API_KEY"]
+    except (KeyError, FileNotFoundError, AttributeError):
+        pass
+    
+    # Prioridad 2: Archivo .env para testing local
+    try:
+        load_dotenv()
+        api_key = os.getenv('OPENAI_API_KEY')
+        if api_key:
+            return api_key
+    except Exception:
+        pass
+    
+    # Prioridad 3: Variable de entorno del sistema
+    return os.getenv('OPENAI_API_KEY')
 
 
 class ReportGenerator:
@@ -31,17 +64,21 @@ class ReportGenerator:
     def replace_placeholders(self, data: Dict[str, Any]) -> None:
         """
         Reemplazar todos los marcadores {{placeholder}} en el documento con datos reales
+        Aplica correcciones de texto automáticamente usando LangChain
         
         Args:
             data: Diccionario con nombres de marcadores como claves y valores de reemplazo
                   Ejemplo: {'cliente': 'Empresa ABC', 'fecha': '2024-01-01'}
         """
+        # Aplicar correcciones de texto automáticamente
+        corrected_data = apply_text_corrections(data)
+        
         replaced_count = 0
-        total_placeholders = len(data)
+        total_placeholders = len(corrected_data)
         
         # Reemplazar en párrafos principales del documento
         for i, paragraph in enumerate(self.document.paragraphs):
-            replaced_count += self._replace_in_paragraph(paragraph, data, f"Para-{i+1}")
+            replaced_count += self._replace_in_paragraph(paragraph, corrected_data, f"Para-{i+1}")
             
         # Reemplazar en tablas (muchas plantillas usan tablas para el diseño)
         for table_idx, table in enumerate(self.document.tables):
@@ -49,11 +86,12 @@ class ReportGenerator:
                 for cell_idx, cell in enumerate(row.cells):
                     for para_idx, paragraph in enumerate(cell.paragraphs):
                         replaced_count += self._replace_in_paragraph(
-                            paragraph, data, 
+                            paragraph, corrected_data, 
                             f"Table-{table_idx+1}-Row-{row_idx+1}-Cell-{cell_idx+1}-Para-{para_idx+1}"
                         )
         
         print(f"✅ Reemplazados exitosamente: {replaced_count} marcadores")
+        print(f"✅ Correcciones LangChain aplicadas automáticamente")
     
     def _replace_in_paragraph(self, paragraph, data: Dict[str, Any], location: str = "") -> int:
         """
@@ -919,13 +957,13 @@ def create_external_risk_donut_plot(
     fig, ax = plt.subplots(figsize=figsize)
     
     # Crear el círculo central para hacer el gráfico de dona
-    circulo_central = plt.Circle((0, 0), 0.7, color='white')
+    circulo_central = plt.Circle((0, 0), 0.5, color='white')
     
     # Crear el gráfico de torta con propiedades personalizadas
     colores = plt.cm.Reds(np.linspace(0.3, 0.9, len(valores)))
     
     wedges, texts, autotexts = ax.pie(valores, labels=nombres, 
-                                     wedgeprops={'linewidth': 2, 'edgecolor': 'white'},
+                                     wedgeprops={'linewidth': 1, 'edgecolor': 'white'},
                                      colors=colores,
                                      autopct='%1.1f%%',
                                      textprops={'fontsize': 6, 'fontfamily': 'Roboto Mono'},
@@ -1087,3 +1125,114 @@ def _extract_placeholders_from_text(text: str) -> List[str]:
     matches = re.findall(pattern, text)
     # Quitar espacios en blanco de las coincidencias en caso de que haya espacios
     return [match.strip() for match in matches]
+
+
+def correct_spanish_text(text: str) -> str:
+    """
+    Corregir texto en español usando LangChain y OpenAI
+    
+    Args:
+        text: Texto en español a corregir
+        
+    Returns:
+        Texto corregido en español
+        
+    Raises:
+        Exception: Si no se puede conectar con OpenAI o hay un error en la corrección
+    """
+    try:
+        # Verificar si hay API key configurada - usar jerarquía de fuentes
+        api_key = get_openai_api_key()
+        if not api_key:
+            print("⚠️ Advertencia: OPENAI_API_KEY no configurada. Devolviendo texto sin corregir.")
+            return text
+        
+        # Verificar si el texto está vacío o es muy corto
+        if not text or len(text.strip()) < 3:
+            return text
+        
+        # Crear cliente OpenAI a través de LangChain
+        llm = ChatOpenAI(
+            model="gpt-4.1-nano",
+            temperature=0.1,
+            api_key=api_key,
+            max_tokens=1000
+        )
+        
+        # Importar plantilla de prompt desde config
+        from config import LANGCHAIN_PROMPT_TEMPLATE
+        
+        # Crear mensaje con el prompt
+        message = HumanMessage(content=LANGCHAIN_PROMPT_TEMPLATE.format(text=text))
+        
+        # Obtener respuesta de OpenAI
+        response = llm.invoke([message])
+        
+        # Extraer el texto corregido
+        corrected_text = response.content.strip()
+        
+        # Validar que la respuesta no esté vacía
+        if not corrected_text:
+            print("⚠️ Advertencia: Respuesta vacía de OpenAI. Devolviendo texto original.")
+            return text
+        
+        return corrected_text
+        
+    except Exception as e:
+        print(f"⚠️ Error al corregir texto con LangChain: {str(e)}")
+        print("Devolviendo texto sin corregir.")
+        return text
+
+
+def apply_text_corrections(data_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Aplicar correcciones de texto a las variables especificadas usando LangChain
+    
+    Args:
+        data_dict: Diccionario con datos del informe
+        
+    Returns:
+        Diccionario con textos corregidos en las variables especificadas
+    """
+    # Variables que requieren corrección de texto (usando nombres del data_dict)
+    fields_to_correct = [
+        'obs_generales',        # observaciones generales
+        'reco_especificas_1',   # recomendaciones específicas 1
+        'reco_especificas_2',   # recomendaciones específicas 2
+        'reco_especificas_3',   # recomendaciones específicas 3
+    ]
+    
+    # Verificar si LangChain está disponible
+    try:
+        # Verificar si hay API key configurada - usar jerarquía de fuentes
+        api_key = get_openai_api_key()
+        if not api_key:
+            print("⚠️ LangChain: OPENAI_API_KEY no configurada. Omitiendo correcciones de texto.")
+            return data_dict
+        
+        print("🔄 Aplicando correcciones de texto con LangChain...")
+        
+        # Crear copia del diccionario para no modificar el original
+        corrected_data = data_dict.copy()
+        
+        for field in fields_to_correct:
+            if field in corrected_data:
+                original_text = str(corrected_data[field])
+                if original_text and len(original_text.strip()) > 3:
+                    print(f"  📝 Corrigiendo: {field}")
+                    corrected_text = correct_spanish_text(original_text)
+                    corrected_data[field] = corrected_text
+                else:
+                    print(f"  ⏭️ Omitiendo {field}: texto demasiado corto")
+            else:
+                print(f"  ⚠️ Campo {field} no encontrado en datos")
+        
+        print("✅ Correcciones de texto completadas")
+        return corrected_data
+        
+    except ImportError:
+        print("⚠️ LangChain no está instalado. Omitiendo correcciones de texto.")
+        return data_dict
+    except Exception as e:
+        print(f"⚠️ Error en correcciones de texto: {str(e)}")
+        return data_dict
