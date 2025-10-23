@@ -30,12 +30,13 @@ st.markdown("""
 <style>
     /* Tema principal */
     .main-header {
-        background: linear-gradient(90deg, #1f4e79 0%, #2980b9 100%);
+        background: linear-gradient(90deg, #2e2e2e 0%, #4b4b4b 100%); /* dark to medium gray */
         padding: 2rem;
         border-radius: 10px;
         margin-bottom: 2rem;
-        color: white;
+        color: #f5f5f5; /* soft white text */
         text-align: center;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
     }
     
     /* Contenedores de sección */
@@ -256,7 +257,7 @@ def display_variables() -> None:
     if not st.session_state.data_loaded or not st.session_state.parsed_data:
         return
     
-    st.markdown('<div class="section-container">', unsafe_allow_html=True)
+    st.divider()
     st.subheader("📋 Datos Extraídos")
     st.markdown("*Los datos se han extraído automáticamente. Puede editarlos si es necesario.*")
     
@@ -729,7 +730,7 @@ def main():
     """, unsafe_allow_html=True)
     
     # Instrucciones
-    st.info("""
+    st.warning("""
     **🚀 Instrucciones:**
     1. **Copie** una fila completa de su hoja de cálculo (Excel/Google Sheets)
     2. **Pegue** los datos en el área de texto a continuación  
@@ -738,7 +739,7 @@ def main():
     """)
     
     # === SECCIÓN 1: ENTRADA DE DATOS ===
-    st.markdown('<div class="section-container">', unsafe_allow_html=True)
+    st.divider()
     st.header("1️⃣ Entrada de Datos")
     
     # Área de texto para pegar datos
@@ -764,7 +765,7 @@ def main():
         display_variables()
         
         # === SECCIÓN 3: GENERACIÓN DE INFORME ===
-        st.markdown('<div class="section-container">', unsafe_allow_html=True)
+        st.divider()
         st.header("3️⃣ Generación de Informe")
         
         st.markdown("**Por favor revise los datos anteriores antes de continuar.**")
