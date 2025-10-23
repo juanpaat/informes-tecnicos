@@ -670,7 +670,7 @@ def generate_report() -> None:
                 # Crear nombre de archivo basado en cliente y fecha
                 clean_cliente = config.cliente.replace("/", "-").replace("\\", "-").replace(":", "-").replace("*", "").replace("?", "").replace('"', "").replace("<", "").replace(">", "").replace("|", "")
                 clean_fecha = config.fecha.replace("/", "-").replace("\\", "-")
-                download_filename = f"Informe_{clean_cliente}_{clean_fecha}.docx"
+                download_filename = f"INFORME TÉCNICO {clean_cliente} - {clean_fecha}.docx"
                 
                 # Botón de descarga
                 st.download_button(
