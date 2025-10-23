@@ -590,9 +590,9 @@ def create_risk_matrix_plot(
            markeredgewidth=1,
            zorder=10)
     
-    # Establecer límites de ejes
-    ax.set_xlim(0, 3)
-    ax.set_ylim(0, 3)
+    # Establecer límites de ejes con margen para evitar que el punto se corte
+    ax.set_xlim(-0.15, 3.15)
+    ax.set_ylim(-0.15, 3.15)
     
     # Establecer marcas y etiquetas
     # Eje X (Interno): invertido de derecha a izquierda
