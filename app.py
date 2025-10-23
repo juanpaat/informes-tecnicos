@@ -670,8 +670,20 @@ def generate_report() -> None:
                 
                 # Crear nombre de archivo basado en cliente y fecha
                 clean_cliente = config.cliente.replace("/", "-").replace("\\", "-").replace(":", "-").replace("*", "").replace("?", "").replace('"', "").replace("<", "").replace(">", "").replace("|", "")
-                clean_fecha = config.fecha.replace("/", "-").replace("\\", "-")
-                download_filename = f"INFORME TÉCNICO {clean_cliente} - {clean_fecha}.docx"
+                
+                # Convertir fecha a formato "Mes Año" en español
+                from datetime import datetime
+                months_spanish = {
+                    1: "ENE", 2: "FEB", 3: "MAR", 4: "ABR", 5: "MAY", 6: "JUN",
+                    7: "JUL", 8: "AGO", 9: "SEP", 10: "OCT", 11: "NOV", 12: "DIC"
+                }
+                try:
+                    date_obj = datetime.strptime(config.fecha, "%d/%m/%Y")
+                    clean_fecha = f"{months_spanish[date_obj.month]} {date_obj.year}"
+                except:
+                    clean_fecha = config.fecha.replace("/", "-").replace("\\", "-")
+                
+                download_filename = f"INFORME TÉCNICO {clean_cliente.upper()} - {clean_fecha}.docx"
                 
                 # Botón de descarga
                 st.download_button(
