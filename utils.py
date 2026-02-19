@@ -7,9 +7,42 @@ import tempfile
 from typing import Dict, Any, Tuple, List
 import re
 import numpy as np
+import streamlit as st
+from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
 
 # Usar backend no interactivo para matplotlib
 matplotlib.use('Agg')
+
+
+def get_openai_api_key() -> str:
+    """
+    Obtener la API key de OpenAI con orden de prioridad:
+    1. Streamlit secrets (para deployment en cloud)
+    2. Archivo .env (para testing local)
+    3. Variable de entorno del sistema
+    
+    Returns:
+        API key si se encuentra, None si no está configurada
+    """
+    # Prioridad 1: Streamlit secrets
+    try:
+        return st.secrets["OPENAI_API_KEY"]
+    except (KeyError, FileNotFoundError, AttributeError):
+        pass
+    
+    # Prioridad 2: Archivo .env para testing local
+    try:
+        load_dotenv()
+        api_key = os.getenv('OPENAI_API_KEY')
+        if api_key:
+            return api_key
+    except Exception:
+        pass
+    
+    # Prioridad 3: Variable de entorno del sistema
+    return os.getenv('OPENAI_API_KEY')
 
 
 class ReportGenerator:
@@ -31,17 +64,21 @@ class ReportGenerator:
     def replace_placeholders(self, data: Dict[str, Any]) -> None:
         """
         Reemplazar todos los marcadores {{placeholder}} en el documento con datos reales
+        Aplica correcciones de texto automáticamente usando LangChain
         
         Args:
             data: Diccionario con nombres de marcadores como claves y valores de reemplazo
                   Ejemplo: {'cliente': 'Empresa ABC', 'fecha': '2024-01-01'}
         """
+        # Aplicar correcciones de texto automáticamente
+        corrected_data = apply_text_corrections(data)
+        
         replaced_count = 0
-        total_placeholders = len(data)
+        total_placeholders = len(corrected_data)
         
         # Reemplazar en párrafos principales del documento
         for i, paragraph in enumerate(self.document.paragraphs):
-            replaced_count += self._replace_in_paragraph(paragraph, data, f"Para-{i+1}")
+            replaced_count += self._replace_in_paragraph(paragraph, corrected_data, f"Para-{i+1}")
             
         # Reemplazar en tablas (muchas plantillas usan tablas para el diseño)
         for table_idx, table in enumerate(self.document.tables):
@@ -49,15 +86,16 @@ class ReportGenerator:
                 for cell_idx, cell in enumerate(row.cells):
                     for para_idx, paragraph in enumerate(cell.paragraphs):
                         replaced_count += self._replace_in_paragraph(
-                            paragraph, data, 
+                            paragraph, corrected_data, 
                             f"Table-{table_idx+1}-Row-{row_idx+1}-Cell-{cell_idx+1}-Para-{para_idx+1}"
                         )
         
         print(f"✅ Reemplazados exitosamente: {replaced_count} marcadores")
+        print(f"✅ Correcciones LangChain aplicadas automáticamente")
     
     def _replace_in_paragraph(self, paragraph, data: Dict[str, Any], location: str = "") -> int:
         """
-        Reemplazar marcadores en un solo párrafo
+        Reemplazar marcadores en un solo párrafo preservando formato de fuente
         
         Args:
             paragraph: Objeto párrafo de Word
@@ -95,7 +133,36 @@ class ReportGenerator:
                 replacement_made = False
                 for run_idx, run in enumerate(paragraph.runs):
                     if placeholder in run.text:
+                        # Preservar las propiedades de fuente antes del reemplazo
+                        original_font_props = {}
+                        if run.font:
+                            original_font_props = {
+                                'name': run.font.name,
+                                'size': run.font.size,
+                                'bold': run.font.bold,
+                                'italic': run.font.italic,
+                                'underline': run.font.underline,
+                                'color': run.font.color.rgb if run.font.color.rgb else None
+                            }
+                        
+                        # Realizar el reemplazo
                         run.text = run.text.replace(placeholder, str(value))
+                        
+                        # Restaurar propiedades de fuente si se perdieron (mantener tamaño original)
+                        if original_font_props and run.font:
+                            if original_font_props.get('name') and not run.font.name:
+                                run.font.name = original_font_props['name']
+                            if original_font_props.get('size') and not run.font.size:
+                                run.font.size = original_font_props['size']
+                            if original_font_props.get('bold') is not None:
+                                run.font.bold = original_font_props['bold']
+                            if original_font_props.get('italic') is not None:
+                                run.font.italic = original_font_props['italic']
+                            if original_font_props.get('underline') is not None:
+                                run.font.underline = original_font_props['underline']
+                            if original_font_props.get('color'):
+                                run.font.color.rgb = original_font_props['color']
+                        
                         replaced_in_paragraph += 1
                         replacement_made = True
                         break  # Solo reemplazar una vez por párrafo
@@ -110,6 +177,7 @@ class ReportGenerator:
     def _replace_across_runs(self, paragraph, placeholder: str, replacement: str) -> bool:
         """
         Manejar marcadores que abarcan múltiples runs debido al formato
+        preservando las propiedades de fuente originales
         
         Args:
             paragraph: El párrafo que contiene el marcador
@@ -124,8 +192,31 @@ class ReportGenerator:
         if placeholder not in full_text:
             return False
         
-        # Estrategia: Limpiar todos los runs y crear uno nuevo con texto reemplazado
+        # Estrategia: Preservar formato del primer run que contiene parte del placeholder
         try:
+            # Encontrar el primer run con formato para usar como referencia
+            reference_run = None
+            for run in paragraph.runs:
+                if run.text.strip():  # Buscar el primer run no vacío
+                    reference_run = run
+                    break
+            
+            # Si no hay run de referencia, usar el primero disponible
+            if reference_run is None and paragraph.runs:
+                reference_run = paragraph.runs[0]
+            
+            # Guardar propiedades de fuente del run de referencia (incluyendo tamaño original)
+            font_properties = {}
+            if reference_run and reference_run.font:
+                font_properties = {
+                    'name': reference_run.font.name,
+                    'size': reference_run.font.size,
+                    'bold': reference_run.font.bold,
+                    'italic': reference_run.font.italic,
+                    'underline': reference_run.font.underline,
+                    'color': reference_run.font.color.rgb if reference_run.font.color.rgb else None
+                }
+            
             # Reemplazar en el texto completo
             new_text = full_text.replace(placeholder, replacement)
             
@@ -133,8 +224,23 @@ class ReportGenerator:
             for run in paragraph.runs[::-1]:  # Orden inverso para evitar problemas de índice
                 run._element.getparent().remove(run._element)
             
-            # Agregar nuevo run con el texto reemplazado
+            # Agregar nuevo run con el texto reemplazado y formato preservado
             new_run = paragraph.add_run(new_text)
+            
+            # Aplicar las propiedades de fuente guardadas (preservando tamaño original)
+            if font_properties and new_run.font:
+                if font_properties.get('name'):
+                    new_run.font.name = font_properties['name']
+                if font_properties.get('size'):
+                    new_run.font.size = font_properties['size']
+                if font_properties.get('bold') is not None:
+                    new_run.font.bold = font_properties['bold']
+                if font_properties.get('italic') is not None:
+                    new_run.font.italic = font_properties['italic']
+                if font_properties.get('underline') is not None:
+                    new_run.font.underline = font_properties['underline']
+                if font_properties.get('color'):
+                    new_run.font.color.rgb = font_properties['color']
             
             return True
             
@@ -249,25 +355,92 @@ class ReportGenerator:
             run = paragraph.add_run()
             run.add_picture(image_path, width=Cm(width), height=Cm(height))
     
+    def standardize_document_fonts(self, default_font_name: str = "Roboto Mono") -> None:
+        """
+        Estandarizar solo el nombre de la fuente en todo el documento para mantener consistencia
+        Preserva los tamaños de fuente originales de la plantilla
+        
+        Args:
+            default_font_name: Nombre de la fuente por defecto a aplicar
+        """
+        try:
+            # Estandarizar fuentes en párrafos principales
+            for paragraph in self.document.paragraphs:
+                for run in paragraph.runs:
+                    if run.font:
+                        # Solo establecer fuente si no está ya definida, preservar tamaño original
+                        if not run.font.name:
+                            run.font.name = default_font_name
+            
+            # Estandarizar fuentes en tablas
+            for table in self.document.tables:
+                for row in table.rows:
+                    for cell in row.cells:
+                        for paragraph in cell.paragraphs:
+                            for run in paragraph.runs:
+                                if run.font:
+                                    # Solo establecer fuente si no está ya definida, preservar tamaño original
+                                    if not run.font.name:
+                                        run.font.name = default_font_name
+        
+        except Exception as e:
+            print(f"Advertencia: No se pudo estandarizar fuentes: {e}")
+    
     def save(self) -> None:
         """Guardar el documento y limpiar archivos temporales"""
-        self.document.save(self.output_path)
-        
-        # Limpiar archivos de imagen temporales
-        for temp_file in self.temp_images:
-            try:
-                os.remove(temp_file)
-            except Exception:
-                pass
+        try:
+            # Estandarizar fuentes antes de guardar para asegurar consistencia
+            self.standardize_document_fonts()
+            self.document.save(self.output_path)
+        finally:
+            # Limpiar archivos de imagen temporales inmediatamente después de guardar
+            self._cleanup_temp_files()
     
-    def __del__(self):
-        """Limpiar cuando el objeto es destruido"""
+    def apply_consistent_font(self, font_name: str = "Roboto Mono") -> None:
+        """
+        Aplicar una fuente consistente a todo el documento, preservando tamaños originales
+        
+        Args:
+            font_name: Nombre de la fuente a aplicar
+        """
+        try:
+            print(f"Aplicando fuente consistente: {font_name} (preservando tamaños originales)")
+            
+            # Aplicar fuente a párrafos principales, preservando tamaños
+            for paragraph in self.document.paragraphs:
+                for run in paragraph.runs:
+                    if run.font:
+                        run.font.name = font_name
+                        # No tocar run.font.size - preservar tamaño original
+            
+            # Aplicar fuente a tablas, preservando tamaños
+            for table in self.document.tables:
+                for row in table.rows:
+                    for cell in row.cells:
+                        for paragraph in cell.paragraphs:
+                            for run in paragraph.runs:
+                                if run.font:
+                                    run.font.name = font_name
+                                    # No tocar run.font.size - preservar tamaño original
+            
+            print("✅ Fuente consistente aplicada exitosamente")
+        
+        except Exception as e:
+            print(f"❌ Error al aplicar fuente consistente: {e}")
+
+    def _cleanup_temp_files(self) -> None:
+        """Limpiar archivos temporales"""
         for temp_file in self.temp_images:
             try:
                 if os.path.exists(temp_file):
                     os.remove(temp_file)
             except Exception:
                 pass
+        self.temp_images.clear()
+    
+    def __del__(self):
+        """Limpiar cuando el objeto es destruido"""
+        self._cleanup_temp_files()
 
 
 def parse_spreadsheet_line(line: str, delimiter: str = '\t') -> List[str]:
@@ -417,9 +590,9 @@ def create_risk_matrix_plot(
            markeredgewidth=1,
            zorder=10)
     
-    # Establecer límites de ejes
-    ax.set_xlim(0, 3)
-    ax.set_ylim(0, 3)
+    # Establecer límites de ejes con margen para evitar que el punto se corte
+    ax.set_xlim(-0.15, 3.15)
+    ax.set_ylim(-0.15, 3.15)
     
     # Establecer marcas y etiquetas
     # Eje X (Interno): invertido de derecha a izquierda
@@ -591,7 +764,7 @@ def plot_presencia_plagas(values, save_path=None):
     # Título y etiquetas de ejes
     plt.ylabel("Nivel de infestación", fontsize=6)
     plt.xticks(rotation=45, ha='right', fontsize=4)
-    plt.yticks([0, 1, 2, 3, 4], fontsize=6)
+    plt.yticks([0, 1, 2, 3, 4], ['Mínimo', 'Leve', 'Bajo', 'Medio', 'Alto'], fontsize=6)
 
     # Límite del eje Y (ajustar según sea necesario)
     plt.ylim(0, 4)
@@ -740,7 +913,7 @@ def create_external_risk_donut_plot(
     """
     
     # Datos para el gráfico
-    nombres = [
+    nombres_completos = [
         'Otros',
         'Limpieza del vecindario', 
         'Manejo de basuras del vecindario',
@@ -754,7 +927,7 @@ def create_external_risk_donut_plot(
         'Locales de comida cerca'
     ]
     
-    valores = [
+    valores_completos = [
         risk_genera_vecindario,
         risk_limpieza_vecindario,
         risk_manejo_basuras_vecindario,
@@ -768,19 +941,32 @@ def create_external_risk_donut_plot(
         risk_locales_comida
     ]
     
+    # Filtrar valores iguales a 0 para evitar complejidad y solapamiento en el gráfico
+    nombres = []
+    valores = []
+    for i, valor in enumerate(valores_completos):
+        if valor > 0:  # Solo incluir valores mayores a 0
+            nombres.append(nombres_completos[i])
+            valores.append(valor)
+    
+    # Si no hay valores mayores a 0, crear un gráfico vacío con mensaje
+    if not valores:
+        nombres = ['Sin riesgos detectados']
+        valores = [1]
+    
     fig, ax = plt.subplots(figsize=figsize)
     
     # Crear el círculo central para hacer el gráfico de dona
-    circulo_central = plt.Circle((0, 0), 0.7, color='white')
+    circulo_central = plt.Circle((0, 0), 0.5, color='white')
     
     # Crear el gráfico de torta con propiedades personalizadas
     colores = plt.cm.Reds(np.linspace(0.3, 0.9, len(valores)))
     
     wedges, texts, autotexts = ax.pie(valores, labels=nombres, 
-                                     wedgeprops={'linewidth': 2, 'edgecolor': 'white'},
+                                     wedgeprops={'linewidth': 1, 'edgecolor': 'white'},
                                      colors=colores,
                                      autopct='%1.1f%%',
-                                     textprops={'fontsize': 6},
+                                     textprops={'fontsize': 6, 'fontfamily': 'Roboto Mono'},
                                      pctdistance=0.85,
                                      labeldistance=1.2,
                                      rotatelabels=False,
@@ -791,7 +977,7 @@ def create_external_risk_donut_plot(
     
     # Agregar título en el centro
     plt.text(0, 0, 'Riesgos\nExternos', ha='center', va='center', 
-             fontsize=6, fontweight='bold', color='#333333')
+             fontsize=7, fontweight='bold', color='#333333', fontfamily='Roboto Mono')
     
     plt.tight_layout()
     
@@ -845,7 +1031,7 @@ def create_internal_risk_donut_plot(
     """
     
     # Datos para el gráfico
-    nombres = [
+    nombres_completos = [
         'Otros',
         'Limpieza del establecimiento',
         'Almacenamiento',
@@ -860,7 +1046,7 @@ def create_internal_risk_donut_plot(
         'Presencia de animales/mascotas'
     ]
     
-    valores = [
+    valores_completos = [
         risk_general_establecimiento,
         risk_limpieza_establecimiento,
         risk_almacenamiento_establecimiento,
@@ -875,6 +1061,19 @@ def create_internal_risk_donut_plot(
         risk_presencia_animales
     ]
     
+    # Filtrar valores iguales a 0 para evitar complejidad y solapamiento en el gráfico
+    nombres = []
+    valores = []
+    for i, valor in enumerate(valores_completos):
+        if valor > 0:  # Solo incluir valores mayores a 0
+            nombres.append(nombres_completos[i])
+            valores.append(valor)
+    
+    # Si no hay valores mayores a 0, crear un gráfico vacío con mensaje
+    if not valores:
+        nombres = ['Sin riesgos detectados']
+        valores = [1]
+    
     fig, ax = plt.subplots(figsize=figsize)
     
     # Crear el círculo central para hacer el gráfico de dona
@@ -887,7 +1086,7 @@ def create_internal_risk_donut_plot(
                                      wedgeprops={'linewidth': 1, 'edgecolor': 'white'},
                                      colors=colores,
                                      autopct='%1.1f%%',
-                                     textprops={'fontsize': 6},
+                                     textprops={'fontsize': 6, 'fontfamily': 'Roboto Mono'},
                                      pctdistance=0.85)
     
     # Agregar el círculo central
@@ -895,7 +1094,7 @@ def create_internal_risk_donut_plot(
     
     # Agregar título en el centro
     plt.text(0, 0, 'Riesgos\nInternos', ha='center', va='center', 
-             fontsize=6, fontweight='bold', color='#333333')
+             fontsize=7, fontweight='bold', color='#333333', fontfamily='Roboto Mono')
     
     plt.tight_layout()
     
@@ -926,3 +1125,259 @@ def _extract_placeholders_from_text(text: str) -> List[str]:
     matches = re.findall(pattern, text)
     # Quitar espacios en blanco de las coincidencias en caso de que haya espacios
     return [match.strip() for match in matches]
+
+
+def correct_spanish_text(text: str, full_prompt: str = None) -> str:
+    """
+    Corregir texto en español usando LangChain y OpenAI.
+    Si se proporciona full_prompt, se usa directamente como contenido del mensaje.
+
+    Args:
+        text: Texto en español a corregir (ignorado si se proporciona full_prompt)
+        full_prompt: Prompt completo y pre-formateado para enviar al modelo
+
+    Returns:
+        Texto corregido en español
+    """
+    try:
+        # Verificar si hay API key configurada - usar jerarquía de fuentes
+        api_key = get_openai_api_key()
+        if not api_key:
+            print("⚠️ Advertencia: OPENAI_API_KEY no configurada. Devolviendo texto sin corregir.")
+            return text
+
+        # Determinar el contenido del prompt
+        if full_prompt:
+            prompt_content = full_prompt
+        else:
+            # Verificar si el texto está vacío o es muy corto
+            if not text or len(text.strip()) < 3:
+                return text
+            # Prompt de respaldo simple para corrección de texto individual
+            prompt_content = (
+                "Corrige la gramática, ortografía y coherencia del siguiente texto en español, "
+                "manteniendo el significado y tono técnico original. "
+                "Devuelve únicamente el texto corregido, sin explicaciones.\n\n"
+                f"Texto:\n{text}\n\nTexto corregido:"
+            )
+
+        # Crear cliente OpenAI a través de LangChain
+        llm = ChatOpenAI(
+            model="gpt-5-mini",
+            temperature=0.1,
+            api_key=api_key,
+            max_tokens=1500
+        )
+
+        # Crear mensaje y obtener respuesta
+        message = HumanMessage(content=prompt_content)
+        response = llm.invoke([message])
+
+        # Extraer el texto corregido
+        corrected_text = response.content.strip()
+
+        # Validar que la respuesta no esté vacía
+        if not corrected_text:
+            print("⚠️ Advertencia: Respuesta vacía de OpenAI. Devolviendo texto original.")
+            return text
+
+        return corrected_text
+
+    except Exception as e:
+        print(f"⚠️ Error al corregir texto con LangChain: {str(e)}")
+        print("Devolviendo texto sin corregir.")
+        return text
+
+
+def _build_pests_string(data_dict: Dict[str, Any]) -> str:
+    """Construir cadena formateada con los datos de presencia de plagas."""
+    pest_labels = {
+        'cucarachas': 'Cucarachas',
+        'hormigas': 'Hormigas',
+        'moscas': 'Moscas',
+        'mosquitos': 'Mosquitos',
+        'zancudo': 'Zancudos',
+        'raton_casero': 'Ratón casero',
+        'rata_noruega': 'Rata noruega',
+        'raton_tejado': 'Ratón de tejado',
+        'larvas_mosquitos': 'Larvas de mosquitos',
+    }
+    lines = [f"  - {label}: {data_dict.get(key, 'Sin datos')}" for key, label in pest_labels.items()]
+    return "\n".join(lines)
+
+
+def _build_external_conditions_string(data_dict: Dict[str, Any]) -> str:
+    """Construir cadena formateada con las condiciones higiénicas y locativas externas."""
+    fields = {
+        'genera_vecindario': 'Condiciones generales del vecindario',
+        'limpieza_vecindario': 'Limpieza del vecindario',
+        'manejo_basuras_vecindario': 'Manejo de basuras del vecindario',
+        'infraes_vecindario': 'Infraestructura del vecindario',
+        'ilumina_vecindario': 'Iluminación del vecindario',
+        'animal_cercanias': 'Presencia de animales en cercanías',
+        'construccion_cerca': 'Construcciones cercanas',
+        'zonas_verdes_cerca': 'Zonas verdes aledañas',
+        'cuerpos_de_agua_cerca': 'Cuerpos de agua cercanos',
+        'desagues_cerca': 'Presencia de desagües en cercanías',
+        'locales_comida': 'Locales de comida y bebida cercanos',
+    }
+    lines = [f"  - {label}: {data_dict.get(key, 'Sin datos')}" for key, label in fields.items()]
+    return "\n".join(lines)
+
+
+def _build_internal_conditions_string(data_dict: Dict[str, Any]) -> str:
+    """Construir cadena formateada con las condiciones higiénicas y locativas internas."""
+    fields = {
+        'general_establecimiento': 'Condiciones generales del establecimiento',
+        'limpieza_establecimiento': 'Limpieza del establecimiento',
+        'almacenamiento_establecimiento': 'Almacenamiento',
+        'iluminacion_establecimiento': 'Iluminación del establecimiento',
+        'capacitacion_personal': 'Capacitación del personal',
+        'sellamiento_puertas': 'Sellamiento de puertas',
+        'ventilacion_establecimiento': 'Ventilación del establecimiento',
+        'grietas_instalaciones': 'Grietas o agujeros en instalaciones',
+        'entrada_salida_material': 'Entrada y salida de material',
+        'acumulacion_objetos': 'Acumulación de objetos',
+        'areas_manipulacion_comida': 'Áreas de manipulación de comida',
+        'presencia_animales': 'Presencia de animales/mascotas',
+    }
+    lines = [f"  - {label}: {data_dict.get(key, 'Sin datos')}" for key, label in fields.items()]
+    return "\n".join(lines)
+
+
+def generate_recommendations(
+    data_dict: Dict[str, Any],
+    pests_str: str,
+    ext_str: str,
+    int_str: str
+) -> Dict[str, str]:
+    """
+    Generar recomendaciones usando LangChain con contexto completo de la visita.
+
+    Returns:
+        Diccionario con claves reco_general, reco_especificas_1/2/3, o {} si falla.
+    """
+    import json
+
+    try:
+        api_key = get_openai_api_key()
+        if not api_key:
+            return {}
+
+        from config import RECOMMENDATIONS_PROMPT_TEMPLATE
+
+        prompt = RECOMMENDATIONS_PROMPT_TEMPLATE.format(
+            sector=data_dict.get('sector', 'No especificado'),
+            tipo_control=data_dict.get('tipo_de_control', 'No especificado'),
+            metodo_control=data_dict.get('metodo_control', 'No especificado'),
+            plaguicidas=data_dict.get('plaguicidas', 'No especificado'),
+            pests_found=pests_str,
+            external_conditions=ext_str,
+            internal_conditions=int_str,
+            obs_generales=data_dict.get('obs_generales', 'Sin observaciones'),
+            reco_generales_original=data_dict.get('reco_general', 'Sin recomendaciones'),
+            reco_especificas_1_original=data_dict.get('reco_especificas_1', 'Sin recomendaciones'),
+            reco_especificas_2_original=data_dict.get('reco_especificas_2', 'Sin recomendaciones'),
+            reco_especificas_3_original=data_dict.get('reco_especificas_3', 'Sin recomendaciones'),
+        )
+
+        llm = ChatOpenAI(
+            model="gpt-5-mini",
+            temperature=0.2,
+            api_key=api_key,
+            max_tokens=800
+        )
+
+        response = llm.invoke([HumanMessage(content=prompt)])
+        response_text = response.content.strip()
+
+        # Limpiar posibles bloques de código markdown en la respuesta
+        if '```json' in response_text:
+            response_text = response_text.split('```json')[1].split('```')[0].strip()
+        elif '```' in response_text:
+            response_text = response_text.split('```')[1].split('```')[0].strip()
+
+        reco = json.loads(response_text)
+
+        result = {}
+        if 'reco_generales' in reco:
+            result['reco_general'] = reco['reco_generales']
+        if 'reco_especificas_1' in reco:
+            result['reco_especificas_1'] = reco['reco_especificas_1']
+        if 'reco_especificas_2' in reco:
+            result['reco_especificas_2'] = reco['reco_especificas_2']
+        if 'reco_especificas_3' in reco:
+            result['reco_especificas_3'] = reco['reco_especificas_3']
+
+        return result
+
+    except Exception as e:
+        print(f"⚠️ Error al generar recomendaciones: {str(e)}")
+        return {}
+
+
+def apply_text_corrections(data_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Aplicar correcciones de texto usando LangChain con contexto completo de la visita.
+
+    - obs_generales: reescrito con contexto completo (condiciones, plagas, sector).
+    - reco_general, reco_especificas_1/2/3: generados desde cero en una sola llamada.
+
+    Args:
+        data_dict: Diccionario con datos del informe (incluye condiciones de riesgo)
+
+    Returns:
+        Diccionario con textos mejorados
+    """
+    try:
+        api_key = get_openai_api_key()
+        if not api_key:
+            print("⚠️ LangChain: OPENAI_API_KEY no configurada. Omitiendo correcciones de texto.")
+            return data_dict
+
+        print("🔄 Aplicando correcciones de texto con LangChain...")
+
+        # Crear copia del diccionario para no modificar el original
+        corrected_data = data_dict.copy()
+
+        # Construir cadenas de contexto reutilizables
+        pests_str = _build_pests_string(corrected_data)
+        ext_str = _build_external_conditions_string(corrected_data)
+        int_str = _build_internal_conditions_string(corrected_data)
+
+        # --- Paso 1: Mejorar obs_generales con contexto completo ---
+        obs_original = str(corrected_data.get('obs_generales', ''))
+        if obs_original and len(obs_original.strip()) > 3:
+            print("  📝 Corrigiendo: obs_generales")
+            from config import LANGCHAIN_PROMPT_TEMPLATE
+            obs_prompt = LANGCHAIN_PROMPT_TEMPLATE.format(
+                text=obs_original,
+                sector=corrected_data.get('sector', 'No especificado'),
+                tipo_control=corrected_data.get('tipo_de_control', 'No especificado'),
+                metodo_control=corrected_data.get('metodo_control', 'No especificado'),
+                pests_found=pests_str,
+                external_conditions=ext_str,
+                internal_conditions=int_str,
+            )
+            corrected_data['obs_generales'] = correct_spanish_text(obs_original, full_prompt=obs_prompt)
+        else:
+            print("  ⏭️ Omitiendo obs_generales: texto demasiado corto")
+
+        # --- Paso 2: Generar recomendaciones con contexto completo ---
+        print("  📝 Generando recomendaciones...")
+        reco = generate_recommendations(corrected_data, pests_str, ext_str, int_str)
+        if reco:
+            corrected_data.update(reco)
+            print("  ✅ Recomendaciones generadas")
+        else:
+            print("  ⚠️ No se pudieron generar recomendaciones, usando originales")
+
+        print("✅ Correcciones de texto completadas")
+        return corrected_data
+
+    except ImportError:
+        print("⚠️ LangChain no está instalado. Omitiendo correcciones de texto.")
+        return data_dict
+    except Exception as e:
+        print(f"⚠️ Error en correcciones de texto: {str(e)}")
+        return data_dict
