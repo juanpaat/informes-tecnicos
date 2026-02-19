@@ -80,9 +80,9 @@ Texto mejorado:
 """
 
 # Plantilla de prompt para generación de recomendaciones
-RECOMMENDATIONS_PROMPT_TEMPLATE = """Eres un experto técnico en control integrado de plagas de salud pública en Colombia.
+RECOMMENDATIONS_PROMPT_TEMPLATE = """Eres un redactor técnico especializado en informes de control integrado de plagas de salud pública en Colombia.
 
-Con base en los datos de la siguiente visita de control de plagas, genera recomendaciones técnicas claras, cortas y accionables.
+Con base en los datos de la siguiente visita, redacta recomendaciones para el cliente.
 
 DATOS DEL SERVICIO:
 - Sector: {sector}
@@ -110,20 +110,29 @@ RECOMENDACIONES ORIGINALES DEL TÉCNICO (como referencia):
 
 INSTRUCCIONES:
 Genera exactamente 4 recomendaciones complementarias entre sí (sin redundancias) con las siguientes claves:
-- "reco_generales": Enfocada exclusivamente en el mantenimiento del tratamiento aplicado y la continuidad del programa de control (ej. conservar plaguicidas, no mojar superficies tratadas, programar próxima visita). NO incluyas acciones estructurales ni de higiene que vayan a cubrirse en las específicas.
-- "reco_especificas_1": Primera acción específica y accionable sobre un aspecto concreto (ej. sellamiento de fisuras, control de accesos).
-- "reco_especificas_2": Segunda acción específica sobre un aspecto diferente al de las otras recomendaciones (ej. manejo de residuos, almacenamiento de alimentos).
-- "reco_especificas_3": Tercera acción específica sobre un aspecto diferente a las anteriores (ej. condiciones locativas, drenajes, iluminación, ventilación).
+- "reco_generales": Orientada al cuidado del tratamiento aplicado por el técnico (ej. conservar los plaguicidas aplicados, evitar mojar superficies tratadas, mantener la continuidad del programa de control). No incluyas aspectos de higiene ni locativos que se cubran en las específicas.
+- "reco_especificas_1": Sugerencia general sobre un aspecto higiénico o locativo relevante según los datos (ej. sellamiento, accesos, residuos).
+- "reco_especificas_2": Sugerencia sobre un aspecto diferente a los anteriores (ej. almacenamiento, orden, manejo de alimentos).
+- "reco_especificas_3": Sugerencia sobre un tercer aspecto diferente (ej. condiciones locativas, ventilación, drenajes, iluminación).
 
-CRITERIOS:
-- Basa las recomendaciones en los datos proporcionados (plagas encontradas, condiciones, observaciones y sector).
-- Las 4 recomendaciones deben ser completamente complementarias: cada una cubre un ángulo distinto y ninguna repite ni parafrasea lo dicho en otra.
-- Las específicas deben ir al detalle de acciones concretas que la recomendación general NO menciona.
-- Si los datos son específicos, adapta las recomendaciones a la situación. Si no lo son, genera recomendaciones apropiadas para el sector.
-- Las recomendaciones deben ser cortas y directas. Pueden ser un poco más largas si la situación lo requiere.
+CRITERIOS DE REDACCIÓN — MUY IMPORTANTES:
+- Tono sugerente y amable: usa frases como "se sugiere", "se recomienda", "es conveniente", "se aconseja mantener". Nunca uses imperativos ni lenguaje obligatorio.
+- Sin urgencia ni plazos: no incluyas palabras como "inmediatamente", "en X días", "urgente" ni ningún tipo de plazo.
+- Sin detalles excesivos: menciona el área o aspecto general si está disponible en los datos, pero no especifiques materiales, métodos exactos ni procedimientos técnicos detallados. El objetivo es orientar, no instruir.
+- Sin acciones propias del servicio: no recomiendes actividades de monitoreo, aplicación de productos, instalación de estaciones ni ninguna tarea que sea parte del servicio de control de plagas ya prestado. Esto podría sugerir que el trabajo no fue realizado.
+- Cada recomendación cubre un ángulo distinto y ninguna repite ni parafrasea lo dicho en otra.
+- Basa las recomendaciones en los datos proporcionados. Si los datos son genéricos, genera sugerencias apropiadas para el sector.
 - Mantén coherencia con las observaciones generales.
 - NO uses "roedores plaga menor" ni "roedores considerados plaga menor"; usa "roedores (plaga menor)" si aplica.
-- Tono técnico, formal y profesional.
+- Tono técnico, formal y profesional, pero siempre cortés y no prescriptivo.
+
+EJEMPLOS DE TONO CORRECTO:
+- "Sellamiento de accesos: se sugiere revisar y mejorar el sellado en áreas donde puedan existir puntos de ingreso, con el fin de reducir el acceso de plagas."
+- "Manejo de residuos: se recomienda mantener las zonas de manejo de alimentos y residuos limpias y ordenadas, asegurando una correcta gestión para evitar que se conviertan en focos de atracción."
+
+EJEMPLOS DE TONO INCORRECTO (evitar):
+- "Sellar en los próximos 7 días las grietas con silicona sanitaria e instalar burletes en todas las puertas."
+- "Retirar inmediatamente los residuos y usar contenedores con tapa hermética, vaciándolos diariamente."
 
 Devuelve únicamente el JSON, sin texto adicional ni bloques de código markdown.
 
