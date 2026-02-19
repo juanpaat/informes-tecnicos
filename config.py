@@ -37,28 +37,98 @@ PESOS_RIESGO_INTERNO = {
     'presencia_animales': 0.07
 }
 
-# Plantilla de prompt para corrección de texto con LangChain
-LANGCHAIN_PROMPT_TEMPLATE =   """
-Eres un experto redactor técnico y lingüista especializado en textos de control integrado de plagas de salud pública.
-Tu tarea es reescribir el texto en español latinoamericano, mejorando no solo la ortografía, gramática y puntuación,
-sino también su **coherencia, cohesión y claridad discursiva**.
+# Plantilla de prompt para reescritura de observaciones generales con contexto completo
+LANGCHAIN_PROMPT_TEMPLATE = """Eres un redactor técnico experto en informes de control integrado de plagas de salud pública en Colombia.
 
-Debes:
-- Mantener el significado original y la información técnica del texto.
-- Reorganizar las ideas si es necesario para que sigan un orden lógico.
-- Utilizar conectores adecuados (por ejemplo: por lo tanto, sin embargo, además, en consecuencia, de esta manera, debido a ello, etc.) para unir las ideas correctamente.
-- Asegurarte de que los pronombres demostrativos (este, esa, aquel, ello, etc.) tengan un referente claro.
-- Evitar repeticiones innecesarias y mejorar la fluidez general.
-- Mantener un tono técnico, formal y propio de informes de salud pública.
-- No agregar información nueva ni modificar datos técnicos o resultados.
-- Si el texto ya está bien escrito, devuélvelo sin cambios.
+Tu tarea es revisar y mejorar el texto de observaciones generales de un informe de visita de control de plagas, integrando de manera natural y coherente la información disponible sobre condiciones higiénicas y locativas.
 
-En resumen, el resultado debe ser un texto claro, lógico, cohesivo, técnicamente preciso y bien redactado.
+DATOS DEL SERVICIO:
+- Sector: {sector}
+- Tipo de control: {tipo_control}
+- Método de control: {metodo_control}
 
-Texto a mejorar:
+PLAGAS ENCONTRADAS EN LA VISITA:
+{pests_found}
+
+CONDICIONES HIGIÉNICAS Y LOCATIVAS EXTERNAS (entorno y vecindario):
+{external_conditions}
+
+CONDICIONES HIGIÉNICAS Y LOCATIVAS INTERNAS (establecimiento):
+{internal_conditions}
+
+TEXTO ORIGINAL DE OBSERVACIONES:
 {text}
 
+INSTRUCCIONES:
+1. Mantén la información técnica y el significado del texto original.
+2. Mejora la ortografía, gramática, puntuación, coherencia y cohesión del texto.
+3. Integra de forma natural en la narrativa los factores de riesgo relevantes derivados de las condiciones higiénicas y locativas. Incluye solo los que sean pertinentes según el nivel de riesgo (calificaciones como "Regular", "Bastantes" o "Muchas" indican riesgo significativo). No menciones condiciones en buen estado si no aportan al análisis.
+4. Asegúrate de que el texto sea coherente con los datos:
+   - Si se mencionan condiciones que contradicen los datos (ej. "buenas condiciones" pero hay riesgos marcados), corrígelo.
+   - Si hay factores de riesgo externos significativos (ej. zonas verdes cercanas, cuerpos de agua, locales de comida, animales en cercanías) no mencionados, inclúyelos de forma breve y apropiada para el sector.
+   - Si hay factores de riesgo internos significativos (ej. grietas, acumulación de objetos, sellamiento deficiente) no mencionados, inclúyelos en la narrativa.
+5. Las plagas mencionadas deben ser coherentes con los datos de "PLAGAS ENCONTRADAS EN LA VISITA".
+6. REGLA OBLIGATORIA: Siempre escribe "roedores (plaga menor)" — nunca "roedores plaga menor", "Roedores plaga menor", "roedores considerados plaga menor" ni ninguna otra variación. Elimina la palabra "considerados" en cualquier contexto similar.
+7. Mantén un tono técnico, formal y propio de informes de salud pública en Colombia.
+8. Usa conectores adecuados y asegúrate de que el texto fluya como un párrafo cohesivo. No uses listas ni viñetas.
+9. No inventes información que no esté respaldada por los datos proporcionados.
+10. Si el texto ya está bien redactado e integrado con los datos, realiza solo las correcciones mínimas necesarias.
+
+Devuelve únicamente el texto mejorado, sin explicaciones, comentarios ni encabezados adicionales.
+
 Texto mejorado:
+"""
+
+# Plantilla de prompt para generación de recomendaciones
+RECOMMENDATIONS_PROMPT_TEMPLATE = """Eres un experto técnico en control integrado de plagas de salud pública en Colombia.
+
+Con base en los datos de la siguiente visita de control de plagas, genera recomendaciones técnicas claras, cortas y accionables.
+
+DATOS DEL SERVICIO:
+- Sector: {sector}
+- Tipo de control: {tipo_control}
+- Método de control: {metodo_control}
+- Plaguicidas utilizados: {plaguicidas}
+
+PLAGAS ENCONTRADAS EN LA VISITA:
+{pests_found}
+
+CONDICIONES HIGIÉNICAS Y LOCATIVAS EXTERNAS:
+{external_conditions}
+
+CONDICIONES HIGIÉNICAS Y LOCATIVAS INTERNAS:
+{internal_conditions}
+
+OBSERVACIONES GENERALES DE LA VISITA:
+{obs_generales}
+
+RECOMENDACIONES ORIGINALES DEL TÉCNICO (como referencia):
+- General: {reco_generales_original}
+- Específica 1: {reco_especificas_1_original}
+- Específica 2: {reco_especificas_2_original}
+- Específica 3: {reco_especificas_3_original}
+
+INSTRUCCIONES:
+Genera exactamente 4 recomendaciones complementarias entre sí (sin redundancias) con las siguientes claves:
+- "reco_generales": Enfocada exclusivamente en el mantenimiento del tratamiento aplicado y la continuidad del programa de control (ej. conservar plaguicidas, no mojar superficies tratadas, programar próxima visita). NO incluyas acciones estructurales ni de higiene que vayan a cubrirse en las específicas.
+- "reco_especificas_1": Primera acción específica y accionable sobre un aspecto concreto (ej. sellamiento de fisuras, control de accesos).
+- "reco_especificas_2": Segunda acción específica sobre un aspecto diferente al de las otras recomendaciones (ej. manejo de residuos, almacenamiento de alimentos).
+- "reco_especificas_3": Tercera acción específica sobre un aspecto diferente a las anteriores (ej. condiciones locativas, drenajes, iluminación, ventilación).
+
+CRITERIOS:
+- Basa las recomendaciones en los datos proporcionados (plagas encontradas, condiciones, observaciones y sector).
+- Las 4 recomendaciones deben ser completamente complementarias: cada una cubre un ángulo distinto y ninguna repite ni parafrasea lo dicho en otra.
+- Las específicas deben ir al detalle de acciones concretas que la recomendación general NO menciona.
+- Si los datos son específicos, adapta las recomendaciones a la situación. Si no lo son, genera recomendaciones apropiadas para el sector.
+- Las recomendaciones deben ser cortas y directas. Pueden ser un poco más largas si la situación lo requiere.
+- Mantén coherencia con las observaciones generales.
+- NO uses "roedores plaga menor" ni "roedores considerados plaga menor"; usa "roedores (plaga menor)" si aplica.
+- Tono técnico, formal y profesional.
+
+Devuelve únicamente el JSON, sin texto adicional ni bloques de código markdown.
+
+Formato de respuesta:
+{{"reco_generales": "...", "reco_especificas_1": "...", "reco_especificas_2": "...", "reco_especificas_3": "..."}}
 """
 
 class ReportConfig:
