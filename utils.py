@@ -1285,7 +1285,7 @@ def generate_recommendations(
             model="gpt-5-mini",
             temperature=0.2,
             api_key=api_key,
-            max_tokens=800
+            max_tokens=2000
         )
 
         response = llm.invoke([HumanMessage(content=prompt)])
