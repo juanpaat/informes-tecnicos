@@ -109,16 +109,17 @@ RECOMENDACIONES ORIGINALES DEL TÉCNICO (como referencia):
 - Específica 3: {reco_especificas_3_original}
 
 INSTRUCCIONES:
-Genera exactamente 4 recomendaciones con las siguientes claves:
-- "reco_generales": Recomendación general de mantenimiento del tratamiento y acciones clave para el control continuo de plagas. Puede incluir varias acciones separadas por punto y coma o comas.
-- "reco_especificas_1": Primera recomendación específica y accionable.
-- "reco_especificas_2": Segunda recomendación específica y accionable.
-- "reco_especificas_3": Tercera recomendación específica y accionable.
+Genera exactamente 4 recomendaciones complementarias entre sí (sin redundancias) con las siguientes claves:
+- "reco_generales": Enfocada exclusivamente en el mantenimiento del tratamiento aplicado y la continuidad del programa de control (ej. conservar plaguicidas, no mojar superficies tratadas, programar próxima visita). NO incluyas acciones estructurales ni de higiene que vayan a cubrirse en las específicas.
+- "reco_especificas_1": Primera acción específica y accionable sobre un aspecto concreto (ej. sellamiento de fisuras, control de accesos).
+- "reco_especificas_2": Segunda acción específica sobre un aspecto diferente al de las otras recomendaciones (ej. manejo de residuos, almacenamiento de alimentos).
+- "reco_especificas_3": Tercera acción específica sobre un aspecto diferente a las anteriores (ej. condiciones locativas, drenajes, iluminación, ventilación).
 
 CRITERIOS:
 - Basa las recomendaciones en los datos proporcionados (plagas encontradas, condiciones, observaciones y sector).
-- Cada recomendación específica debe enfocarse en un aspecto diferente (ej. sellamiento, limpieza, almacenamiento, manejo de residuos, control de acceso, seguimiento periódico, etc.).
-- Si los datos son específicos, adapta las recomendaciones a la situación. Si no lo son, genera recomendaciones generales pero apropiadas para el sector.
+- Las 4 recomendaciones deben ser completamente complementarias: cada una cubre un ángulo distinto y ninguna repite ni parafrasea lo dicho en otra.
+- Las específicas deben ir al detalle de acciones concretas que la recomendación general NO menciona.
+- Si los datos son específicos, adapta las recomendaciones a la situación. Si no lo son, genera recomendaciones apropiadas para el sector.
 - Las recomendaciones deben ser cortas y directas. Pueden ser un poco más largas si la situación lo requiere.
 - Mantén coherencia con las observaciones generales.
 - NO uses "roedores plaga menor" ni "roedores considerados plaga menor"; usa "roedores (plaga menor)" si aplica.
