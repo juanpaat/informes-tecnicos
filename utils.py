@@ -1127,18 +1127,17 @@ def _extract_placeholders_from_text(text: str) -> List[str]:
     return [match.strip() for match in matches]
 
 
-def correct_spanish_text(text: str) -> str:
+def correct_spanish_text(text: str, full_prompt: str = None) -> str:
     """
-    Corregir texto en español usando LangChain y OpenAI
-    
+    Corregir texto en español usando LangChain y OpenAI.
+    Si se proporciona full_prompt, se usa directamente como contenido del mensaje.
+
     Args:
-        text: Texto en español a corregir
-        
+        text: Texto en español a corregir (ignorado si se proporciona full_prompt)
+        full_prompt: Prompt completo y pre-formateado para enviar al modelo
+
     Returns:
         Texto corregido en español
-        
-    Raises:
-        Exception: Si no se puede conectar con OpenAI o hay un error en la corrección
     """
     try:
         # Verificar si hay API key configurada - usar jerarquía de fuentes
@@ -1146,90 +1145,236 @@ def correct_spanish_text(text: str) -> str:
         if not api_key:
             print("⚠️ Advertencia: OPENAI_API_KEY no configurada. Devolviendo texto sin corregir.")
             return text
-        
-        # Verificar si el texto está vacío o es muy corto
-        if not text or len(text.strip()) < 3:
-            return text
-        
+
+        # Determinar el contenido del prompt
+        if full_prompt:
+            prompt_content = full_prompt
+        else:
+            # Verificar si el texto está vacío o es muy corto
+            if not text or len(text.strip()) < 3:
+                return text
+            # Prompt de respaldo simple para corrección de texto individual
+            prompt_content = (
+                "Corrige la gramática, ortografía y coherencia del siguiente texto en español, "
+                "manteniendo el significado y tono técnico original. "
+                "Devuelve únicamente el texto corregido, sin explicaciones.\n\n"
+                f"Texto:\n{text}\n\nTexto corregido:"
+            )
+
         # Crear cliente OpenAI a través de LangChain
         llm = ChatOpenAI(
-            model="gpt-4.1-nano",
+            model="gpt-5-mini",
             temperature=0.1,
             api_key=api_key,
-            max_tokens=1000
+            max_tokens=1500
         )
-        
-        # Importar plantilla de prompt desde config
-        from config import LANGCHAIN_PROMPT_TEMPLATE
-        
-        # Crear mensaje con el prompt
-        message = HumanMessage(content=LANGCHAIN_PROMPT_TEMPLATE.format(text=text))
-        
-        # Obtener respuesta de OpenAI
+
+        # Crear mensaje y obtener respuesta
+        message = HumanMessage(content=prompt_content)
         response = llm.invoke([message])
-        
+
         # Extraer el texto corregido
         corrected_text = response.content.strip()
-        
+
         # Validar que la respuesta no esté vacía
         if not corrected_text:
             print("⚠️ Advertencia: Respuesta vacía de OpenAI. Devolviendo texto original.")
             return text
-        
+
         return corrected_text
-        
+
     except Exception as e:
         print(f"⚠️ Error al corregir texto con LangChain: {str(e)}")
         print("Devolviendo texto sin corregir.")
         return text
 
 
+def _build_pests_string(data_dict: Dict[str, Any]) -> str:
+    """Construir cadena formateada con los datos de presencia de plagas."""
+    pest_labels = {
+        'cucarachas': 'Cucarachas',
+        'hormigas': 'Hormigas',
+        'moscas': 'Moscas',
+        'mosquitos': 'Mosquitos',
+        'zancudo': 'Zancudos',
+        'raton_casero': 'Ratón casero',
+        'rata_noruega': 'Rata noruega',
+        'raton_tejado': 'Ratón de tejado',
+        'larvas_mosquitos': 'Larvas de mosquitos',
+    }
+    lines = [f"  - {label}: {data_dict.get(key, 'Sin datos')}" for key, label in pest_labels.items()]
+    return "\n".join(lines)
+
+
+def _build_external_conditions_string(data_dict: Dict[str, Any]) -> str:
+    """Construir cadena formateada con las condiciones higiénicas y locativas externas."""
+    fields = {
+        'genera_vecindario': 'Condiciones generales del vecindario',
+        'limpieza_vecindario': 'Limpieza del vecindario',
+        'manejo_basuras_vecindario': 'Manejo de basuras del vecindario',
+        'infraes_vecindario': 'Infraestructura del vecindario',
+        'ilumina_vecindario': 'Iluminación del vecindario',
+        'animal_cercanias': 'Presencia de animales en cercanías',
+        'construccion_cerca': 'Construcciones cercanas',
+        'zonas_verdes_cerca': 'Zonas verdes aledañas',
+        'cuerpos_de_agua_cerca': 'Cuerpos de agua cercanos',
+        'desagues_cerca': 'Presencia de desagües en cercanías',
+        'locales_comida': 'Locales de comida y bebida cercanos',
+    }
+    lines = [f"  - {label}: {data_dict.get(key, 'Sin datos')}" for key, label in fields.items()]
+    return "\n".join(lines)
+
+
+def _build_internal_conditions_string(data_dict: Dict[str, Any]) -> str:
+    """Construir cadena formateada con las condiciones higiénicas y locativas internas."""
+    fields = {
+        'general_establecimiento': 'Condiciones generales del establecimiento',
+        'limpieza_establecimiento': 'Limpieza del establecimiento',
+        'almacenamiento_establecimiento': 'Almacenamiento',
+        'iluminacion_establecimiento': 'Iluminación del establecimiento',
+        'capacitacion_personal': 'Capacitación del personal',
+        'sellamiento_puertas': 'Sellamiento de puertas',
+        'ventilacion_establecimiento': 'Ventilación del establecimiento',
+        'grietas_instalaciones': 'Grietas o agujeros en instalaciones',
+        'entrada_salida_material': 'Entrada y salida de material',
+        'acumulacion_objetos': 'Acumulación de objetos',
+        'areas_manipulacion_comida': 'Áreas de manipulación de comida',
+        'presencia_animales': 'Presencia de animales/mascotas',
+    }
+    lines = [f"  - {label}: {data_dict.get(key, 'Sin datos')}" for key, label in fields.items()]
+    return "\n".join(lines)
+
+
+def generate_recommendations(
+    data_dict: Dict[str, Any],
+    pests_str: str,
+    ext_str: str,
+    int_str: str
+) -> Dict[str, str]:
+    """
+    Generar recomendaciones usando LangChain con contexto completo de la visita.
+
+    Returns:
+        Diccionario con claves reco_general, reco_especificas_1/2/3, o {} si falla.
+    """
+    import json
+
+    try:
+        api_key = get_openai_api_key()
+        if not api_key:
+            return {}
+
+        from config import RECOMMENDATIONS_PROMPT_TEMPLATE
+
+        prompt = RECOMMENDATIONS_PROMPT_TEMPLATE.format(
+            sector=data_dict.get('sector', 'No especificado'),
+            tipo_control=data_dict.get('tipo_de_control', 'No especificado'),
+            metodo_control=data_dict.get('metodo_control', 'No especificado'),
+            plaguicidas=data_dict.get('plaguicidas', 'No especificado'),
+            pests_found=pests_str,
+            external_conditions=ext_str,
+            internal_conditions=int_str,
+            obs_generales=data_dict.get('obs_generales', 'Sin observaciones'),
+            reco_generales_original=data_dict.get('reco_general', 'Sin recomendaciones'),
+            reco_especificas_1_original=data_dict.get('reco_especificas_1', 'Sin recomendaciones'),
+            reco_especificas_2_original=data_dict.get('reco_especificas_2', 'Sin recomendaciones'),
+            reco_especificas_3_original=data_dict.get('reco_especificas_3', 'Sin recomendaciones'),
+        )
+
+        llm = ChatOpenAI(
+            model="gpt-5-mini",
+            temperature=0.2,
+            api_key=api_key,
+            max_tokens=800
+        )
+
+        response = llm.invoke([HumanMessage(content=prompt)])
+        response_text = response.content.strip()
+
+        # Limpiar posibles bloques de código markdown en la respuesta
+        if '```json' in response_text:
+            response_text = response_text.split('```json')[1].split('```')[0].strip()
+        elif '```' in response_text:
+            response_text = response_text.split('```')[1].split('```')[0].strip()
+
+        reco = json.loads(response_text)
+
+        result = {}
+        if 'reco_generales' in reco:
+            result['reco_general'] = reco['reco_generales']
+        if 'reco_especificas_1' in reco:
+            result['reco_especificas_1'] = reco['reco_especificas_1']
+        if 'reco_especificas_2' in reco:
+            result['reco_especificas_2'] = reco['reco_especificas_2']
+        if 'reco_especificas_3' in reco:
+            result['reco_especificas_3'] = reco['reco_especificas_3']
+
+        return result
+
+    except Exception as e:
+        print(f"⚠️ Error al generar recomendaciones: {str(e)}")
+        return {}
+
+
 def apply_text_corrections(data_dict: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Aplicar correcciones de texto a las variables especificadas usando LangChain
-    
+    Aplicar correcciones de texto usando LangChain con contexto completo de la visita.
+
+    - obs_generales: reescrito con contexto completo (condiciones, plagas, sector).
+    - reco_general, reco_especificas_1/2/3: generados desde cero en una sola llamada.
+
     Args:
-        data_dict: Diccionario con datos del informe
-        
+        data_dict: Diccionario con datos del informe (incluye condiciones de riesgo)
+
     Returns:
-        Diccionario con textos corregidos en las variables especificadas
+        Diccionario con textos mejorados
     """
-    # Variables que requieren corrección de texto (usando nombres del data_dict)
-    fields_to_correct = [
-        'obs_generales',        # observaciones generales
-        'reco_especificas_1',   # recomendaciones específicas 1
-        'reco_especificas_2',   # recomendaciones específicas 2
-        'reco_especificas_3',   # recomendaciones específicas 3
-    ]
-    
-    # Verificar si LangChain está disponible
     try:
-        # Verificar si hay API key configurada - usar jerarquía de fuentes
         api_key = get_openai_api_key()
         if not api_key:
             print("⚠️ LangChain: OPENAI_API_KEY no configurada. Omitiendo correcciones de texto.")
             return data_dict
-        
+
         print("🔄 Aplicando correcciones de texto con LangChain...")
-        
+
         # Crear copia del diccionario para no modificar el original
         corrected_data = data_dict.copy()
-        
-        for field in fields_to_correct:
-            if field in corrected_data:
-                original_text = str(corrected_data[field])
-                if original_text and len(original_text.strip()) > 3:
-                    print(f"  📝 Corrigiendo: {field}")
-                    corrected_text = correct_spanish_text(original_text)
-                    corrected_data[field] = corrected_text
-                else:
-                    print(f"  ⏭️ Omitiendo {field}: texto demasiado corto")
-            else:
-                print(f"  ⚠️ Campo {field} no encontrado en datos")
-        
+
+        # Construir cadenas de contexto reutilizables
+        pests_str = _build_pests_string(corrected_data)
+        ext_str = _build_external_conditions_string(corrected_data)
+        int_str = _build_internal_conditions_string(corrected_data)
+
+        # --- Paso 1: Mejorar obs_generales con contexto completo ---
+        obs_original = str(corrected_data.get('obs_generales', ''))
+        if obs_original and len(obs_original.strip()) > 3:
+            print("  📝 Corrigiendo: obs_generales")
+            from config import LANGCHAIN_PROMPT_TEMPLATE
+            obs_prompt = LANGCHAIN_PROMPT_TEMPLATE.format(
+                text=obs_original,
+                sector=corrected_data.get('sector', 'No especificado'),
+                tipo_control=corrected_data.get('tipo_de_control', 'No especificado'),
+                metodo_control=corrected_data.get('metodo_control', 'No especificado'),
+                pests_found=pests_str,
+                external_conditions=ext_str,
+                internal_conditions=int_str,
+            )
+            corrected_data['obs_generales'] = correct_spanish_text(obs_original, full_prompt=obs_prompt)
+        else:
+            print("  ⏭️ Omitiendo obs_generales: texto demasiado corto")
+
+        # --- Paso 2: Generar recomendaciones con contexto completo ---
+        print("  📝 Generando recomendaciones...")
+        reco = generate_recommendations(corrected_data, pests_str, ext_str, int_str)
+        if reco:
+            corrected_data.update(reco)
+            print("  ✅ Recomendaciones generadas")
+        else:
+            print("  ⚠️ No se pudieron generar recomendaciones, usando originales")
+
         print("✅ Correcciones de texto completadas")
         return corrected_data
-        
+
     except ImportError:
         print("⚠️ LangChain no está instalado. Omitiendo correcciones de texto.")
         return data_dict
