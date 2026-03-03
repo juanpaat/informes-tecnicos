@@ -63,35 +63,31 @@ class ReportGenerator:
         
     def replace_placeholders(self, data: Dict[str, Any]) -> None:
         """
-        Reemplazar todos los marcadores {{placeholder}} en el documento con datos reales
-        Aplica correcciones de texto automáticamente usando LangChain
-        
+        Reemplazar todos los marcadores {{placeholder}} en el documento con datos reales.
+        Los datos deben llegar ya corregidos por IA si aplica (ver apply_text_corrections).
+
         Args:
             data: Diccionario con nombres de marcadores como claves y valores de reemplazo
                   Ejemplo: {'cliente': 'Empresa ABC', 'fecha': '2024-01-01'}
         """
-        # Aplicar correcciones de texto automáticamente
-        corrected_data = apply_text_corrections(data)
-        
         replaced_count = 0
-        total_placeholders = len(corrected_data)
+        total_placeholders = len(data)
         
         # Reemplazar en párrafos principales del documento
         for i, paragraph in enumerate(self.document.paragraphs):
-            replaced_count += self._replace_in_paragraph(paragraph, corrected_data, f"Para-{i+1}")
-            
+            replaced_count += self._replace_in_paragraph(paragraph, data, f"Para-{i+1}")
+
         # Reemplazar en tablas (muchas plantillas usan tablas para el diseño)
         for table_idx, table in enumerate(self.document.tables):
             for row_idx, row in enumerate(table.rows):
                 for cell_idx, cell in enumerate(row.cells):
                     for para_idx, paragraph in enumerate(cell.paragraphs):
                         replaced_count += self._replace_in_paragraph(
-                            paragraph, corrected_data, 
+                            paragraph, data,
                             f"Table-{table_idx+1}-Row-{row_idx+1}-Cell-{cell_idx+1}-Para-{para_idx+1}"
                         )
-        
+
         print(f"✅ Reemplazados exitosamente: {replaced_count} marcadores")
-        print(f"✅ Correcciones LangChain aplicadas automáticamente")
     
     def _replace_in_paragraph(self, paragraph, data: Dict[str, Any], location: str = "") -> int:
         """
@@ -1163,7 +1159,7 @@ def correct_spanish_text(text: str, full_prompt: str = None) -> str:
 
         # Crear cliente OpenAI a través de LangChain
         llm = ChatOpenAI(
-            model="gpt-5-mini",
+            model="gpt-4.1-mini",
             temperature=0.1,
             api_key=api_key,
             max_tokens=1500
@@ -1288,7 +1284,7 @@ def generate_recommendations(
         )
 
         llm = ChatOpenAI(
-            model="gpt-5-mini",
+            model="gpt-4.1-mini",
             temperature=0.2,
             api_key=api_key,
             max_tokens=2000
