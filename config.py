@@ -69,10 +69,11 @@ INSTRUCCIONES:
    - Si hay factores de riesgo internos significativos (ej. grietas, acumulación de objetos, sellamiento deficiente) no mencionados, inclúyelos en la narrativa.
 5. Las plagas mencionadas deben ser coherentes con los datos de "PLAGAS ENCONTRADAS EN LA VISITA".
 6. REGLA OBLIGATORIA: Siempre escribe "roedores (plaga menor)" — nunca "roedores plaga menor", "Roedores plaga menor", "roedores considerados plaga menor" ni ninguna otra variación. Elimina la palabra "considerados" en cualquier contexto similar.
-7. Mantén un tono técnico, formal y propio de informes de salud pública en Colombia.
-8. Usa conectores adecuados y asegúrate de que el texto fluya como un párrafo cohesivo. No uses listas ni viñetas.
-9. No inventes información que no esté respaldada por los datos proporcionados.
-10. Si el texto ya está bien redactado e integrado con los datos, realiza solo las correcciones mínimas necesarias.
+7. REGLA OBLIGATORIA: Nunca uses la palabra "reinfestación". Este informe corresponde únicamente a la visita actual, no a un seguimiento en el tiempo. Usa siempre "infestación" si aplica.
+8. Mantén un tono técnico, formal y propio de informes de salud pública en Colombia.
+9. Usa conectores adecuados y asegúrate de que el texto fluya como un párrafo cohesivo. No uses listas ni viñetas.
+10. No inventes información que no esté respaldada por los datos proporcionados.
+11. Si el texto ya está bien redactado e integrado con los datos, realiza solo las correcciones mínimas necesarias.
 
 Devuelve únicamente el texto mejorado, sin explicaciones, comentarios ni encabezados adicionales.
 
@@ -124,6 +125,7 @@ CRITERIOS DE REDACCIÓN — MUY IMPORTANTES:
 - Basa las recomendaciones en los datos proporcionados. Si los datos son genéricos, genera sugerencias apropiadas para el sector.
 - Mantén coherencia con las observaciones generales.
 - NO uses "roedores plaga menor" ni "roedores considerados plaga menor"; usa "roedores (plaga menor)" si aplica.
+- REGLA OBLIGATORIA: Nunca uses la palabra "reinfestación". Este informe corresponde únicamente a la visita actual, no a un seguimiento en el tiempo. Usa siempre "infestación" si aplica.
 - Tono técnico, formal y profesional, pero siempre cortés y no prescriptivo.
 
 EJEMPLOS DE TONO CORRECTO:

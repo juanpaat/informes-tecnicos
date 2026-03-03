@@ -10,7 +10,7 @@ import numpy as np
 import streamlit as st
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 
 # Usar backend no interactivo para matplotlib
 matplotlib.use('Agg')
@@ -1170,8 +1170,14 @@ def correct_spanish_text(text: str, full_prompt: str = None) -> str:
         )
 
         # Crear mensaje y obtener respuesta
+        system = SystemMessage(content=(
+            "Eres un redactor técnico de informes de control de plagas. "
+            "Trabaja EXCLUSIVAMENTE con la información proporcionada en el prompt. "
+            "Si un dato no está en la información suministrada, no lo menciones ni lo inferras. "
+            "Nunca uses la palabra 'reinfestación'; usa siempre 'infestación'."
+        ))
         message = HumanMessage(content=prompt_content)
-        response = llm.invoke([message])
+        response = llm.invoke([system, message])
 
         # Extraer el texto corregido
         corrected_text = response.content.strip()
@@ -1288,7 +1294,13 @@ def generate_recommendations(
             max_tokens=2000
         )
 
-        response = llm.invoke([HumanMessage(content=prompt)])
+        system = SystemMessage(content=(
+            "Eres un redactor técnico de informes de control de plagas. "
+            "Genera recomendaciones ÚNICAMENTE a partir de la información proporcionada en el prompt. "
+            "Si un dato no está disponible, no lo menciones ni lo inferras. "
+            "Nunca uses la palabra 'reinfestación'; usa siempre 'infestación'."
+        ))
+        response = llm.invoke([system, HumanMessage(content=prompt)])
         response_text = response.content.strip()
 
         # Limpiar posibles bloques de código markdown en la respuesta
