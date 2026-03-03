@@ -12,9 +12,9 @@ import logging
 # Importar las clases y funciones existentes
 from config import ReportConfig, PESOS_RIESGO_EXTERNO, PESOS_RIESGO_INTERNO
 from utils import (
-    ReportGenerator, parse_spreadsheet_line, map_rating_to_score, 
+    ReportGenerator, parse_spreadsheet_line, map_rating_to_score,
     calculate_risk_score, sentence_case_after_period, remove_double_spaces,
-    validate_file_path
+    validate_file_path, apply_text_corrections
 )
 
 # Configuración de la página
@@ -639,11 +639,20 @@ def generate_report() -> None:
                         height=7.60
                     )
             
-            # Paso 2: Reemplazar marcadores de texto
+            # Paso 2: Mejorar textos con IA
+            status_text.text("🤖 Mejorando texto con IA...")
+            progress_bar.progress(85)
+            try:
+                corrected_data = apply_text_corrections(st.session_state.parsed_data)
+            except Exception as e:
+                st.warning(f"⚠️ La mejora con IA falló y se usarán los textos originales. Error: {e}")
+                corrected_data = st.session_state.parsed_data
+
+            # Paso 3: Reemplazar marcadores de texto
             status_text.text("📝 Insertando datos en plantilla...")
             progress_bar.progress(90)
-            
-            generator.replace_placeholders(st.session_state.parsed_data)
+
+            generator.replace_placeholders(corrected_data)
             
             # Paso 2.5: Aplicar fuente consistente para evitar problemas de formato
             status_text.text("🔤 Aplicando formato consistente...")
