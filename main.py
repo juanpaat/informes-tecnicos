@@ -1,4 +1,4 @@
-from utils import ReportGenerator
+from utils import ReportGenerator, apply_text_corrections
 from config import ReportConfig
 import logging
 
@@ -87,12 +87,13 @@ def main():
                 )
         
         # ============================================================================
-        # PASO 4: REEMPLAZAR MARCADORES DE TEXTO (DESPUÉS DE IMÁGENES PARA EVITAR PROBLEMAS)
+        # PASO 4: MEJORAR TEXTOS CON IA Y REEMPLAZAR MARCADORES
         # ============================================================================
+        logger.info("Mejorando textos con IA...")
+        corrected_data = apply_text_corrections(data_dict)
+
         logger.info("Reemplazando marcadores de texto...")
-        
-        # Esta función busca en todo el documento patrones {{key}} y los reemplaza
-        generator.replace_placeholders(data_dict)
+        generator.replace_placeholders(corrected_data)
         
         # ============================================================================
         # PASO 4.5: APLICAR FUENTE CONSISTENTE PARA EVITAR PROBLEMAS DE FORMATO
