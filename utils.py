@@ -1209,7 +1209,8 @@ def _build_pests_string(data_dict: Dict[str, Any]) -> str:
 
 
 def _build_external_conditions_string(data_dict: Dict[str, Any]) -> str:
-    """Construir cadena formateada con las condiciones higiénicas y locativas externas."""
+    """Construir cadena formateada con las condiciones higiénicas y locativas externas.
+    Marca las condiciones con nivel crítico (🔴) para facilitar la identificación."""
     fields = {
         'genera_vecindario': 'Condiciones generales del vecindario',
         'limpieza_vecindario': 'Limpieza del vecindario',
@@ -1223,12 +1224,17 @@ def _build_external_conditions_string(data_dict: Dict[str, Any]) -> str:
         'desagues_cerca': 'Presencia de desagües en cercanías',
         'locales_comida': 'Locales de comida y bebida cercanos',
     }
-    lines = [f"  - {label}: {data_dict.get(key, 'Sin datos')}" for key, label in fields.items()]
+    lines = []
+    for key, label in fields.items():
+        value = data_dict.get(key, 'Sin datos')
+        marker = " ⚠️ NIVEL CRÍTICO" if "🔴" in str(value) else ""
+        lines.append(f"  - {label}: {value}{marker}")
     return "\n".join(lines)
 
 
 def _build_internal_conditions_string(data_dict: Dict[str, Any]) -> str:
-    """Construir cadena formateada con las condiciones higiénicas y locativas internas."""
+    """Construir cadena formateada con las condiciones higiénicas y locativas internas.
+    Marca las condiciones con nivel crítico (🔴) para facilitar la identificación."""
     fields = {
         'general_establecimiento': 'Condiciones generales del establecimiento',
         'limpieza_establecimiento': 'Limpieza del establecimiento',
@@ -1243,7 +1249,11 @@ def _build_internal_conditions_string(data_dict: Dict[str, Any]) -> str:
         'areas_manipulacion_comida': 'Áreas de manipulación de comida',
         'presencia_animales': 'Presencia de animales/mascotas',
     }
-    lines = [f"  - {label}: {data_dict.get(key, 'Sin datos')}" for key, label in fields.items()]
+    lines = []
+    for key, label in fields.items():
+        value = data_dict.get(key, 'Sin datos')
+        marker = " ⚠️ NIVEL CRÍTICO" if "🔴" in str(value) else ""
+        lines.append(f"  - {label}: {value}{marker}")
     return "\n".join(lines)
 
 

@@ -40,7 +40,7 @@ PESOS_RIESGO_INTERNO = {
 # Plantilla de prompt para reescritura de observaciones generales con contexto completo
 LANGCHAIN_PROMPT_TEMPLATE = """Eres un redactor técnico experto en informes de control integrado de plagas de salud pública en Colombia.
 
-Tu tarea es revisar y mejorar el texto de observaciones generales de un informe de visita de control de plagas, integrando de manera natural y coherente la información disponible sobre condiciones higiénicas y locativas.
+Tu tarea es revisar y mejorar el texto de observaciones generales de un informe de visita de control de plagas.
 
 DATOS DEL SERVICIO:
 - Sector: {sector}
@@ -50,30 +50,33 @@ DATOS DEL SERVICIO:
 PLAGAS ENCONTRADAS EN LA VISITA:
 {pests_found}
 
-CONDICIONES HIGIÉNICAS Y LOCATIVAS EXTERNAS (entorno y vecindario):
+CONDICIONES HIGIÉNICAS Y LOCATIVAS EXTERNAS — RIESGO EXTERNO (entorno y vecindario):
 {external_conditions}
 
-CONDICIONES HIGIÉNICAS Y LOCATIVAS INTERNAS (establecimiento):
+CONDICIONES HIGIÉNICAS Y LOCATIVAS INTERNAS — RIESGO INTERNO (establecimiento):
 {internal_conditions}
 
 TEXTO ORIGINAL DE OBSERVACIONES:
 {text}
 
-INSTRUCCIONES:
+INSTRUCCIONES PARA EL MANEJO DE CONDICIONES DE RIESGO — MUY IMPORTANTE:
+- Las condiciones de riesgo se dividen en dos categorías: RIESGO EXTERNO (entorno/vecindario) y RIESGO INTERNO (establecimiento). Cuando menciones un factor de riesgo, siempre especifica si corresponde al riesgo externo o al riesgo interno.
+- NO agregues ni menciones condiciones de riesgo que no estén ya presentes en el TEXTO ORIGINAL DE OBSERVACIONES, A MENOS QUE estén calificadas como nivel crítico (marcadas con "🔴"). Los niveles críticos son: "🔴 Mala", "🔴 Muchas", "🔴 Mucha evidencia".
+- Si una condición aparece como "🟢", "🟡" o "🟠", NO la incorpores al texto salvo que el texto original ya la mencione explícitamente.
+- Si el texto original menciona un aspecto que coincide con una condición de las listas de riesgo (externo o interno), conéctalo correctamente especificando si es un factor de riesgo externo o interno. Por ejemplo: si el texto menciona "fisuras", relaciónalo con "grietas o agujeros en instalaciones (riesgo interno)".
+- Si hay condiciones con nivel "🔴" que NO están mencionadas en el texto original, agrégalas de forma general, breve y natural, indicando claramente si son de riesgo externo o de riesgo interno.
+- Nunca inventes información que no esté en el texto original ni en las condiciones de riesgo proporcionadas.
+
+INSTRUCCIONES GENERALES:
 1. Mantén la información técnica y el significado del texto original.
 2. Mejora la ortografía, gramática, puntuación, coherencia y cohesión del texto.
-3. Integra de forma natural en la narrativa los factores de riesgo relevantes derivados de las condiciones higiénicas y locativas. Incluye solo los que sean pertinentes según el nivel de riesgo (calificaciones como "Regular", "Bastantes" o "Muchas" indican riesgo significativo). No menciones condiciones en buen estado si no aportan al análisis.
-4. Asegúrate de que el texto sea coherente con los datos:
-   - Si se mencionan condiciones que contradicen los datos (ej. "buenas condiciones" pero hay riesgos marcados), corrígelo.
-   - Si hay factores de riesgo externos significativos (ej. zonas verdes cercanas, cuerpos de agua, locales de comida, animales en cercanías) no mencionados, inclúyelos de forma breve y apropiada para el sector.
-   - Si hay factores de riesgo internos significativos (ej. grietas, acumulación de objetos, sellamiento deficiente) no mencionados, inclúyelos en la narrativa.
-5. Las plagas mencionadas deben ser coherentes con los datos de "PLAGAS ENCONTRADAS EN LA VISITA".
-6. REGLA OBLIGATORIA: Siempre escribe "roedores (plaga menor)" — nunca "roedores plaga menor", "Roedores plaga menor", "roedores considerados plaga menor" ni ninguna otra variación. Elimina la palabra "considerados" en cualquier contexto similar.
-7. REGLA OBLIGATORIA: Nunca uses la palabra "reinfestación". Este informe corresponde únicamente a la visita actual, no a un seguimiento en el tiempo. Usa siempre "infestación" si aplica.
-8. Mantén un tono técnico, formal y propio de informes de salud pública en Colombia.
-9. Usa conectores adecuados y asegúrate de que el texto fluya como un párrafo cohesivo. No uses listas ni viñetas.
-10. No inventes información que no esté respaldada por los datos proporcionados.
-11. Si el texto ya está bien redactado e integrado con los datos, realiza solo las correcciones mínimas necesarias.
+3. Integra de forma natural en la narrativa los facores de riestgo según las instrucciones para el manejo de condiciones de riesgos solo si aplican. No hagas una lista de condiciones, sino que conéctalas de forma fluida en el texto.
+4. Las plagas mencionadas deben ser coherentes con los datos de "PLAGAS ENCONTRADAS EN LA VISITA".
+5. REGLA OBLIGATORIA: Siempre escribe "roedores (plaga menor)" — nunca "roedores plaga menor", "Roedores plaga menor", "roedores considerados plaga menor" ni ninguna otra variación. Elimina la palabra "considerados" en cualquier contexto similar.
+6. REGLA OBLIGATORIA: Nunca uses la palabra "reinfestación". Este informe corresponde únicamente a la visita actual, no a un seguimiento en el tiempo. Usa siempre "infestación" si aplica.
+7. Mantén un tono técnico, formal y propio de informes de salud pública en Colombia.
+8. Usa conectores adecuados y asegúrate de que el texto fluya como un párrafo cohesivo. No uses listas ni viñetas.
+8. Si el texto ya está bien redactado, realiza solo las correcciones mínimas necesarias.
 
 Devuelve únicamente el texto mejorado, sin explicaciones, comentarios ni encabezados adicionales.
 
