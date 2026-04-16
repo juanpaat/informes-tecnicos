@@ -760,10 +760,10 @@ def plot_presencia_plagas(values, save_path=None):
     # Título y etiquetas de ejes
     plt.ylabel("Nivel de infestación", fontsize=6)
     plt.xticks(rotation=45, ha='right', fontsize=4)
-    plt.yticks([0, 1, 2, 3, 4], ['Mínimo', 'Leve', 'Bajo', 'Medio', 'Alto'], fontsize=6)
+    plt.yticks([0, 1, 2, 3], ['Mínimo', 'Bajo', 'Medio', 'Alto'], fontsize=6)
 
     # Límite del eje Y (ajustar según sea necesario)
-    plt.ylim(0, 4)
+    plt.ylim(0, 3.5)
 
     # Estilo de cuadrícula y diseño
     plt.grid(axis='y', linestyle='-', linewidth=0.5, alpha=0.5)
