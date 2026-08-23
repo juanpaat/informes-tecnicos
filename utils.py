@@ -1,5 +1,5 @@
 from docx import Document
-from docx.shared import Inches, Cm
+from docx.shared import Cm
 import matplotlib.pyplot as plt
 import matplotlib
 import os
@@ -14,6 +14,27 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 # Usar backend no interactivo para matplotlib
 matplotlib.use('Agg')
+
+# ============================================================================
+# CONFIGURACIÓN DEL MODELO LLM
+# ============================================================================
+# Modelo usado por los dos puntos de llamada (correct_spanish_text y
+# generate_recommendations). Cambiar aquí lo cambia en ambos.
+LLM_MODEL = "gpt-5.6-luna"
+
+# Los modelos de la familia GPT-5 gastan "tokens de razonamiento" del MISMO
+# presupuesto que la respuesta visible. Si el presupuesto se agota razonando,
+# la respuesta llega VACÍA sin lanzar ningún error.
+# Con reasoning_effort="none" el razonamiento se desactiva y el presupuesto
+# completo queda disponible para el texto del informe.
+# OJO: "none" es el valor correcto para gpt-5.4/5.5/5.6. Los modelos gpt-5 y
+# gpt-5-mini usan "minimal" en su lugar y rechazan "none".
+LLM_REASONING_EFFORT = "none"
+
+# Presupuesto de tokens de salida. Holgado a propósito: el costo real lo
+# determinan los tokens realmente generados (~150-200), no este tope.
+LLM_MAX_TOKENS_OBS = 4000
+LLM_MAX_TOKENS_RECO = 6000
 
 
 def get_openai_api_key() -> str:
@@ -71,8 +92,7 @@ class ReportGenerator:
                   Ejemplo: {'cliente': 'Empresa ABC', 'fecha': '2024-01-01'}
         """
         replaced_count = 0
-        total_placeholders = len(data)
-        
+
         # Reemplazar en párrafos principales del documento
         for i, paragraph in enumerate(self.document.paragraphs):
             replaced_count += self._replace_in_paragraph(paragraph, data, f"Para-{i+1}")
@@ -242,61 +262,6 @@ class ReportGenerator:
             
         except Exception:
             return False
-    
-    def create_visualization(
-        self,
-        data: Dict[str, Any],
-        viz_type: str = 'bar',
-        title: str = '',
-        xlabel: str = '',
-        ylabel: str = '',
-        figsize: Tuple[int, int] = (10, 6)
-    ) -> str:
-        """
-        Crear una visualización matplotlib y guardarla temporalmente
-        
-        Args:
-            data: Diccionario con datos x e y {'x': [...], 'y': [...]}
-            viz_type: Tipo de gráfico ('bar', 'line', 'pie', 'scatter')
-            title: Título del gráfico
-            xlabel: Etiqueta del eje X
-            ylabel: Etiqueta del eje Y
-            figsize: Tamaño de la figura como (ancho, alto)
-            
-        Returns:
-            Ruta al archivo de imagen temporal
-        """
-        fig, ax = plt.subplots(figsize=figsize)
-        
-        # Crear visualización según el tipo
-        if viz_type == 'bar':
-            ax.bar(data['x'], data['y'])
-        elif viz_type == 'line':
-            ax.plot(data['x'], data['y'], marker='o')
-        elif viz_type == 'pie':
-            ax.pie(data['y'], labels=data['x'], autopct='%1.1f%%')
-        elif viz_type == 'scatter':
-            ax.scatter(data['x'], data['y'])
-        else:
-            raise ValueError(f"Tipo de visualización no soportado: {viz_type}")
-        
-        # Establecer etiquetas y título
-        if title:
-            ax.set_title(title, fontsize=14, fontweight='bold')
-        if xlabel and viz_type != 'pie':
-            ax.set_xlabel(xlabel)
-        if ylabel and viz_type != 'pie':
-            ax.set_ylabel(ylabel)
-        
-        plt.tight_layout()
-        
-        # Guardar en archivo temporal
-        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
-        plt.savefig(temp_file.name, dpi=300, bbox_inches='tight')
-        plt.close()
-        
-        self.temp_images.append(temp_file.name)
-        return temp_file.name
     
     def add_image_to_placeholder(
         self,
@@ -619,11 +584,6 @@ def create_risk_matrix_plot(
     return save_path
 
 
-class ReportGeneratorMethods:
-    """Métodos adicionales para la clase ReportGenerator"""
-    pass
-
-
 # Agregar métodos a la clase ReportGenerator
 def create_risk_matrix(
     self,
@@ -755,7 +715,7 @@ def plot_presencia_plagas(values, save_path=None):
 
     # Crear figura
     plt.figure(figsize=(2.76, 1.77))
-    bars = plt.bar(plagas, values, color='#65B6C9', width=0.6)
+    plt.bar(plagas, values, color='#65B6C9', width=0.6)
 
     # Título y etiquetas de ejes
     plt.ylabel("Nivel de infestación", fontsize=6)
@@ -788,7 +748,6 @@ def remove_double_spaces(text: str) -> str:
     Returns:
         Texto con espacios múltiples reemplazados por espacios simples
     """
-    import re
     # Usar regex para reemplazar múltiples espacios en blanco con uno solo
     return re.sub(r'\s+', ' ', text.strip())
 
@@ -810,32 +769,6 @@ def validate_file_path(path: str, must_exist: bool = True) -> bool:
         # Verificar si el directorio existe y es escribible
         directory = os.path.dirname(path) or '.'
         return os.path.isdir(directory) and os.access(directory, os.W_OK)
-
-
-def scan_template_placeholders(document) -> List[str]:
-    """
-    Escanear un documento de Word para encontrar todos los patrones {{placeholder}}
-    
-    Args:
-        document: Objeto Document de python-docx
-        
-    Returns:
-        Lista de nombres de marcadores encontrados en plantilla (sin los corchetes {{ }})
-    """
-    placeholders = set()
-    
-    # Escanear párrafos principales del documento
-    for paragraph in document.paragraphs:
-        placeholders.update(_extract_placeholders_from_text(paragraph.text))
-    
-    # Escanear tablas
-    for table in document.tables:
-        for row in table.rows:
-            for cell in row.cells:
-                for paragraph in cell.paragraphs:
-                    placeholders.update(_extract_placeholders_from_text(paragraph.text))
-    
-    return sorted(list(placeholders))
 
 
 def sentence_case_after_period(text):
@@ -958,15 +891,15 @@ def create_external_risk_donut_plot(
     # Crear el gráfico de torta con propiedades personalizadas
     colores = plt.cm.Reds(np.linspace(0.3, 0.9, len(valores)))
     
-    wedges, texts, autotexts = ax.pie(valores, labels=nombres, 
-                                     wedgeprops={'linewidth': 1, 'edgecolor': 'white'},
-                                     colors=colores,
-                                     autopct='%1.1f%%',
-                                     textprops={'fontsize': 6, 'fontfamily': 'Roboto Mono'},
-                                     pctdistance=0.85,
-                                     labeldistance=1.2,
-                                     rotatelabels=False,
-                                     frame=False)
+    ax.pie(valores, labels=nombres,
+           wedgeprops={'linewidth': 1, 'edgecolor': 'white'},
+           colors=colores,
+           autopct='%1.1f%%',
+           textprops={'fontsize': 6, 'fontfamily': 'Roboto Mono'},
+           pctdistance=0.85,
+           labeldistance=1.2,
+           rotatelabels=False,
+           frame=False)
     
     # Agregar el círculo central
     ax.add_artist(circulo_central)
@@ -1078,12 +1011,12 @@ def create_internal_risk_donut_plot(
     # Crear el gráfico de torta con propiedades personalizadas
     colores = plt.cm.Blues(np.linspace(0.3, 0.9, len(valores)))
     
-    wedges, texts, autotexts = ax.pie(valores, labels=nombres, 
-                                     wedgeprops={'linewidth': 1, 'edgecolor': 'white'},
-                                     colors=colores,
-                                     autopct='%1.1f%%',
-                                     textprops={'fontsize': 6, 'fontfamily': 'Roboto Mono'},
-                                     pctdistance=0.85)
+    ax.pie(valores, labels=nombres,
+           wedgeprops={'linewidth': 1, 'edgecolor': 'white'},
+           colors=colores,
+           autopct='%1.1f%%',
+           textprops={'fontsize': 6, 'fontfamily': 'Roboto Mono'},
+           pctdistance=0.85)
     
     # Agregar el círculo central
     ax.add_artist(circulo_central)
@@ -1103,24 +1036,6 @@ def create_internal_risk_donut_plot(
     plt.close()
     
     return save_path
-
-
-def _extract_placeholders_from_text(text: str) -> List[str]:
-    """
-    Extraer patrones {{placeholder}} del texto usando regex
-    
-    Args:
-        text: Texto para buscar marcadores
-        
-    Returns:
-        Lista de nombres de marcadores (sin corchetes)
-    """
-    import re
-    # Patrón para coincidir con {{cualquier_cosa}} pero capturar solo el contenido interno
-    pattern = r'\{\{([^}]+)\}\}'
-    matches = re.findall(pattern, text)
-    # Quitar espacios en blanco de las coincidencias en caso de que haya espacios
-    return [match.strip() for match in matches]
 
 
 def correct_spanish_text(text: str, full_prompt: str = None) -> str:
@@ -1159,10 +1074,11 @@ def correct_spanish_text(text: str, full_prompt: str = None) -> str:
 
         # Crear cliente OpenAI a través de LangChain
         llm = ChatOpenAI(
-            model="gpt-4.1-mini",
+            model=LLM_MODEL,
             temperature=0.1,
             api_key=api_key,
-            max_tokens=1500
+            max_tokens=LLM_MAX_TOKENS_OBS,
+            reasoning_effort=LLM_REASONING_EFFORT
         )
 
         # Crear mensaje y obtener respuesta
@@ -1294,10 +1210,11 @@ def generate_recommendations(
         )
 
         llm = ChatOpenAI(
-            model="gpt-4.1-mini",
+            model=LLM_MODEL,
             temperature=0.2,
             api_key=api_key,
-            max_tokens=2000
+            max_tokens=LLM_MAX_TOKENS_RECO,
+            reasoning_effort=LLM_REASONING_EFFORT
         )
 
         system = SystemMessage(content=(

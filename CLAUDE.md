@@ -30,7 +30,24 @@ The LLM requires an OpenAI key. Lookup order in `get_openai_api_key()` (`utils.p
 2. `.env` file via `python-dotenv`
 3. System environment variable
 
-Current model: `gpt-4.1-mini` (used in both LLM call sites). Do not change to `gpt-5-mini` — that model silently returns empty content.
+## LLM model
+
+Configured by constants at the top of `utils.py` — both call sites read them, so change it in one place:
+
+```python
+LLM_MODEL = "gpt-5.6-luna"
+LLM_REASONING_EFFORT = "none"
+LLM_MAX_TOKENS_OBS = 4000
+LLM_MAX_TOKENS_RECO = 6000
+```
+
+**GPT-5-family models spend "reasoning tokens" out of the same budget as the visible answer.** If the budget is exhausted while reasoning, the response comes back **empty with no error raised** — `apply_text_corrections()` then silently falls back to the technician's original text. This is what made an earlier `gpt-5-mini` attempt (at `max_tokens=1500`) look like the model was broken; it was the token budget, not the model.
+
+Two rules follow:
+- Always pass `reasoning_effort`, and keep the token budget generous. The budget is only a cap — actual cost tracks tokens generated (~150–200 per call).
+- The valid `reasoning_effort` value **differs by generation**: `gpt-5.4/5.5/5.6` accept `"none"`/`"low"`/… and reject `"minimal"`; `gpt-5`/`gpt-5-mini` want `"minimal"` and reject `"none"`. Passing the wrong one is a hard 400, not a silent failure.
+
+`temperature` and `reasoning_effort` can be set together on `gpt-5.6-luna` (verified).
 
 ## Architecture
 

@@ -3,7 +3,6 @@ Configuración para generación de informes
 Contiene configuración de archivos, parseo de datos y cálculos de riesgo
 """
 
-import os
 from typing import Dict, Any
 from utils import parse_spreadsheet_line, validate_file_path, map_rating_to_score, calculate_risk_score, sentence_case_after_period, remove_double_spaces
 

@@ -6,15 +6,13 @@ Sistema automatizado para crear informes de control de plagas desde datos de hoj
 import streamlit as st
 import tempfile
 import os
-from typing import Dict, Any, List, Tuple
-import logging
+from typing import List, Tuple
 
 # Importar las clases y funciones existentes
 from config import ReportConfig, PESOS_RIESGO_EXTERNO, PESOS_RIESGO_INTERNO
 from utils import (
     ReportGenerator, parse_spreadsheet_line, map_rating_to_score,
-    calculate_risk_score, sentence_case_after_period, remove_double_spaces,
-    validate_file_path, apply_text_corrections
+    calculate_risk_score, apply_text_corrections
 )
 
 # Configuración de la página
@@ -533,16 +531,11 @@ def generate_report() -> None:
                         setattr(config, text_key, value)
                     
                     # Actualizar el valor numérico
-                    from utils import map_rating_to_score
                     if hasattr(config, config_key):
                         setattr(config, config_key, map_rating_to_score(value))
                 
                 elif hasattr(config, config_key):
                     setattr(config, config_key, value)
-            
-            # Recalcular los riesgos totales después de las actualizaciones
-            from config import PESOS_RIESGO_EXTERNO, PESOS_RIESGO_INTERNO
-            from utils import calculate_risk_score
             
             # Recalcular riesgos individuales
             external_risks = [
@@ -670,7 +663,7 @@ def generate_report() -> None:
             st.session_state.report_generated = True
             st.session_state.report_count += 1
             
-            st.success(f"✅ **¡Informe generado exitosamente!**")
+            st.success("✅ **¡Informe generado exitosamente!**")
             
             # Leer el archivo generado y ofrecer descarga
             try:
@@ -765,7 +758,8 @@ def main():
     
     # Área de texto para pegar datos
     st.markdown("**Pegue aquí los datos de su hoja de cálculo:**")
-    data_input = st.text_area(
+    # El valor se lee desde st.session_state['spreadsheet_input'] en parse_data()
+    st.text_area(
         "Datos de la hoja de cálculo",
         placeholder="Pegue aquí la fila completa de su hoja de cálculo (Excel/Google Sheets)...\n\nEjemplo: 11/10/2025 19:28:13\t3692\tU.R. CAMINO VERDE DEL BOSQUE\t...",
         height=150,
